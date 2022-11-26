@@ -1,12 +1,16 @@
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <iostream>
+/*--------以下为了vS2019编译通过-------*/
+// #include <string>
+// #include <iostream>
+// #include<cstdio>
+// #include<vector>
+// #pragma warning(disable:4996)
+// using namespace std;
 
-using namespace std;
+/*------以下是使用自己编译器时的做法-------*/
 
-int Kmp(string text, string key) 
+vector<int> Kmp(string text, string key) 
 {
+	vector<int> ans;
 	int k = -1; 
 	int* kmpTable = new int[key.length()];
 	kmpTable[0] = -1;
@@ -27,23 +31,26 @@ int Kmp(string text, string key)
 			k++;
 		if (k == key.length() - 1)  
 		{
-            delete[] kmpTable;
-			return i - key.length() + 1;
+			ans.push_back(i - key.length() + 1);
 		}
 	}
     delete[] kmpTable;
-    return -1;
+    return ans;
 }
 
 int main(){
-    cout << "Please input the text:" << endl;
+	printf("Please input the text:");
     string text;
-    cin >> text;
-    cout << "Please input the key:" << endl;
+    getline(cin, text);
+	printf("Please input the key:");
     string key;
-    cin >> key;
-    if (Kmp(text, key) == -1)
-        cout << "Not found!" << endl;
-    else
-        cout << "Found at " << Kmp(text, key) << endl;
+    getline(cin, key);
+	vector<int> ans = Kmp(text, key);
+    if (ans.empty())
+        printf("False");
+    else{
+		for (int i = 0; i < ans.size() -1; i++)
+			printf("%d,", ans[i]);
+		printf("%d", ans[ans.size() - 1]);
+	}
 }
