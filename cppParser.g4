@@ -46,7 +46,7 @@ unqualifiedId:
 qualifiedId: nestedNameSpecifier Template? unqualifiedId;
 
 nestedNameSpecifier:
-	(theTypeName | namespaceName | decltypeSpecifier)? Doublecolon
+	(theTypeName | decltypeSpecifier)? Doublecolon
 	| nestedNameSpecifier (
 		Identifier
 		| Template? simpleTemplateId
@@ -262,25 +262,14 @@ declaration:
 	blockDeclaration
 	| functionDefinition
 	| templateDeclaration
-	| explicitInstantiation
-	| explicitSpecialization
 	| linkageSpecification
-	| namespaceDefinition
 	| emptyDeclaration
 	| attributeDeclaration;
 
 blockDeclaration:
 	simpleDeclaration
-	| asmDefinition
-	| namespaceAliasDefinition
-	| usingDeclaration
-	| usingDirective
-	| staticAssertDeclaration
-	| aliasDeclaration
-	| opaqueEnumDeclaration;
+	| staticAssertDeclaration;
 
-aliasDeclaration:
-	Using Identifier attributeSpecifierSeq? Assign theTypeId Semi;
 
 simpleDeclaration:
 	declSpecifierSeq? initDeclaratorList? Semi
@@ -296,7 +285,6 @@ attributeDeclaration: attributeSpecifierSeq Semi;
 declSpecifier:
 	storageClassSpecifier
 	| typeSpecifier
-	| functionSpecifier
 	| Friend
 	| Typedef
 	| Constexpr;
@@ -310,14 +298,12 @@ storageClassSpecifier:
 	| Extern
 	| Mutable;
 
-functionSpecifier: Inline | Virtual | Explicit;
 
 typedefName: Identifier;
 
 typeSpecifier:
 	trailingTypeSpecifier
-	| classSpecifier
-	| enumSpecifier;
+	| classSpecifier;
 
 trailingTypeSpecifier:
 	simpleTypeSpecifier
@@ -357,7 +343,6 @@ simpleTypeSpecifier:
 
 theTypeName:
 	className
-	| enumName
 	| typedefName
 	| simpleTemplateId;
 
@@ -369,55 +354,7 @@ elaboratedTypeSpecifier:
 		attributeSpecifierSeq? nestedNameSpecifier? Identifier
 		| simpleTemplateId
 		| nestedNameSpecifier Template? simpleTemplateId
-	)
-	| Enum nestedNameSpecifier? Identifier;
-
-enumName: Identifier;
-
-enumSpecifier:
-	enumHead LeftBrace (enumeratorList Comma?)? RightBrace;
-
-enumHead:
-	enumkey attributeSpecifierSeq? (
-		nestedNameSpecifier? Identifier
-	)? enumbase?;
-
-opaqueEnumDeclaration:
-	enumkey attributeSpecifierSeq? Identifier enumbase? Semi;
-
-enumkey: Enum (Class | Struct)?;
-
-enumbase: Colon typeSpecifierSeq;
-
-enumeratorList:
-	enumeratorDefinition (Comma enumeratorDefinition)*;
-
-enumeratorDefinition: enumerator (Assign constantExpression)?;
-
-enumerator: Identifier;
-
-namespaceName: originalNamespaceName | namespaceAlias;
-
-originalNamespaceName: Identifier;
-
-namespaceDefinition:
-	Inline? Namespace (Identifier | originalNamespaceName)? LeftBrace namespaceBody = declarationseq
-		? RightBrace;
-
-namespaceAlias: Identifier;
-
-namespaceAliasDefinition:
-	Namespace Identifier Assign qualifiednamespacespecifier Semi;
-
-qualifiednamespacespecifier: nestedNameSpecifier? namespaceName;
-
-usingDeclaration:
-	Using ((Typename_? nestedNameSpecifier) | Doublecolon) unqualifiedId Semi;
-
-usingDirective:
-	attributeSpecifierSeq? Using Namespace nestedNameSpecifier? namespaceName Semi;
-
-asmDefinition: Asm LeftParen StringLiteral RightParen Semi;
+	);
 
 linkageSpecification:
 	Extern StringLiteral (
@@ -540,7 +477,7 @@ parameterDeclaration:
 	);
 
 functionDefinition:
-	attributeSpecifierSeq? declSpecifierSeq? declarator virtualSpecifierSeq? functionBody;
+	attributeSpecifierSeq? declSpecifierSeq? declarator functionBody;
 
 functionBody:
 	constructorInitializer? compoundStatement
@@ -562,102 +499,13 @@ initializerList:
 	)*;
 
 bracedInitList: LeftBrace (initializerList Comma?)? RightBrace;
-/*Classes*/
 
-className: Identifier | simpleTemplateId;
-
-classSpecifier:
-	classHead LeftBrace memberSpecification? RightBrace;
-
-classHead:
-	classKey attributeSpecifierSeq? (
-		classHeadName classVirtSpecifier?
-	)? baseClause?
-	| Union attributeSpecifierSeq? (
-		classHeadName classVirtSpecifier?
-	)?;
-
-classHeadName: nestedNameSpecifier? className;
-
-classVirtSpecifier: Final;
-
-classKey: Class | Struct;
-
-memberSpecification:
-	(memberdeclaration | accessSpecifier Colon)+;
-
-memberdeclaration:
-	attributeSpecifierSeq? declSpecifierSeq? memberDeclaratorList? Semi
-	| functionDefinition
-	| usingDeclaration
-	| staticAssertDeclaration
-	| templateDeclaration
-	| aliasDeclaration
-	| emptyDeclaration;
-
-memberDeclaratorList:
-	memberDeclarator (Comma memberDeclarator)*;
-
-memberDeclarator:
-	declarator (
-		virtualSpecifierSeq? pureSpecifier?
-		| braceOrEqualInitializer?
-	)
-	| Identifier? attributeSpecifierSeq? Colon constantExpression;
-
-virtualSpecifierSeq: virtualSpecifier+;
-
-virtualSpecifier: Override | Final;
-/*
- purespecifier: Assign '0'//Conflicts with the lexer ;
- */
 
 pureSpecifier:
 	Assign val = OctalLiteral {if($val.text.compareTo("0")!=0) throw new InputMismatchException(this);
 		};
-/*Derived classes*/
 
-baseClause: Colon baseSpecifierList;
-
-baseSpecifierList:
-	baseSpecifier Ellipsis? (Comma baseSpecifier Ellipsis?)*;
-
-baseSpecifier:
-	attributeSpecifierSeq? (
-		baseTypeSpecifier
-		| Virtual accessSpecifier? baseTypeSpecifier
-		| accessSpecifier Virtual? baseTypeSpecifier
-	);
-
-classOrDeclType:
-	nestedNameSpecifier? className
-	| decltypeSpecifier;
-
-baseTypeSpecifier: classOrDeclType;
-
-accessSpecifier: Private | Protected | Public;
-/*Special member functions*/@
-
-conversionFunctionId: Operator conversionTypeId;
-
-conversionTypeId: typeSpecifierSeq conversionDeclarator?;
-
-conversionDeclarator: pointerOperator conversionDeclarator?;
-
-constructorInitializer: Colon memInitializerList;
-
-memInitializerList:
-	memInitializer Ellipsis? (Comma memInitializer Ellipsis?)*;
-
-memInitializer:
-	meminitializerid (
-		LeftParen expressionList? RightParen
-		| bracedInitList
-	);
-
-meminitializerid: classOrDeclType | Identifier;
 /*Overloading*/
-
 
 literalOperatorId:
 	Operator (
@@ -700,9 +548,6 @@ typeNameSpecifier:
 		| Template? simpleTemplateId
 	);
 
-explicitInstantiation: Extern? Template declaration;
-
-explicitSpecialization: Template Less Greater declaration;
 /*Exception handling*/
 
 typeIdList: theTypeId Ellipsis? (Comma theTypeId Ellipsis?)*;
