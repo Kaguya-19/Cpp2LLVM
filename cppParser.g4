@@ -40,13 +40,12 @@ unqualifiedId:
 	Identifier
 	| conversionFunctionId
 	| literalOperatorId
-	| Tilde (className | decltypeSpecifier)
 	| templateId;
 
 qualifiedId: nestedNameSpecifier Template? unqualifiedId;
 
 nestedNameSpecifier:
-	(theTypeName | decltypeSpecifier)? Doublecolon
+	theTypeName? Doublecolon
 	| nestedNameSpecifier (
 		Identifier
 		| Template? simpleTemplateId
@@ -82,8 +81,7 @@ expressionList: initializerList;
 
 pseudoDestructorName:
 	nestedNameSpecifier? (theTypeName Doublecolon)? Tilde theTypeName
-	| nestedNameSpecifier Template simpleTemplateId Doublecolon Tilde theTypeName
-	| Tilde decltypeSpecifier;
+	| nestedNameSpecifier Template simpleTemplateId Doublecolon Tilde theTypeName;
 
 unaryExpression:
 	postfixExpression
@@ -113,8 +111,8 @@ newDeclarator:
 	| noPointerNewDeclarator;
 
 noPointerNewDeclarator:
-	LeftBracket expression RightBracket attributeSpecifierSeq?
-	| noPointerNewDeclarator LeftBracket constantExpression RightBracket attributeSpecifierSeq?;
+	LeftBracket expression RightBracket
+	| noPointerNewDeclarator LeftBracket constantExpression RightBracket;
 
 newInitializer:
 	LeftParen expressionList? RightParen
@@ -140,14 +138,10 @@ additiveExpression:
 		(Plus | Minus) multiplicativeExpression
 	)*;
 
-shiftExpression:
-	additiveExpression (shiftOperator additiveExpression)*;
-
-shiftOperator: Greater Greater | Less Less;
 
 relationalExpression:
-	shiftExpression (
-		(Less | Greater | LessEqual | GreaterEqual) shiftExpression
+	additiveExpression (
+		(Less | Greater | LessEqual | GreaterEqual) additiveExpression
 	)*;
 
 equalityExpression:
@@ -184,8 +178,6 @@ assignmentOperator:
 	| ModAssign
 	| PlusAssign
 	| MinusAssign
-	| RightShiftAssign
-	| LeftShiftAssign
 	| AndAssign
 	| XorAssign
 	| OrAssign;
@@ -198,8 +190,7 @@ constantExpression: conditionalExpression;
 statement:
 	labeledStatement
 	| declarationStatement
-	| attributeSpecifierSeq? (
-		expressionStatement
+	| ( expressionStatement
 		| compoundStatement
 		| selectionStatement
 		| iterationStatement
@@ -207,8 +198,7 @@ statement:
 	);
 
 labeledStatement:
-	attributeSpecifierSeq? (
-		Identifier
+	( Identifier
 		| Case constantExpression
 		| Default
 	) Colon statement;
@@ -225,7 +215,7 @@ selectionStatement:
 
 condition:
 	expression
-	| attributeSpecifierSeq? declSpecifierSeq declarator (
+	| declSpecifierSeq declarator (
 		Assign initializerClause
 		| bracedInitList
 	);
@@ -241,7 +231,7 @@ iterationStatement:
 forInitStatement: expressionStatement | simpleDeclaration;
 
 forRangeDeclaration:
-	attributeSpecifierSeq? declSpecifierSeq declarator;
+	declSpecifierSeq declarator;
 
 forRangeInitializer: expression | bracedInitList;
 
@@ -262,42 +252,28 @@ declaration:
 	blockDeclaration
 	| functionDefinition
 	| templateDeclaration
-	| linkageSpecification
-	| emptyDeclaration
-	| attributeDeclaration;
+	| emptyDeclaration;
 
 blockDeclaration:
 	simpleDeclaration
 	| staticAssertDeclaration;
 
-
 simpleDeclaration:
 	declSpecifierSeq? initDeclaratorList? Semi
-	| attributeSpecifierSeq declSpecifierSeq? initDeclaratorList Semi;
+	| declSpecifierSeq? initDeclaratorList Semi;
 
 staticAssertDeclaration:
 	Static_assert LeftParen constantExpression Comma StringLiteral RightParen Semi;
 
 emptyDeclaration: Semi;
 
-attributeDeclaration: attributeSpecifierSeq Semi;
-
 declSpecifier:
-	storageClassSpecifier
+	Static
 	| typeSpecifier
-	| Friend
 	| Typedef
 	| Constexpr;
 	
-declSpecifierSeq: declSpecifier+? attributeSpecifierSeq?;
-
-storageClassSpecifier:
-	Register
-	| Static
-	| Thread_local
-	| Extern
-	| Mutable;
-
+declSpecifierSeq: declSpecifier+?;
 
 typedefName: Identifier;
 
@@ -307,14 +283,13 @@ typeSpecifier:
 
 trailingTypeSpecifier:
 	simpleTypeSpecifier
-	| elaboratedTypeSpecifier
 	| typeNameSpecifier
 	| cvQualifier;
 
-typeSpecifierSeq: typeSpecifier+ attributeSpecifierSeq?;
+typeSpecifierSeq: typeSpecifier+;
 
 trailingTypeSpecifierSeq:
-	trailingTypeSpecifier+ attributeSpecifierSeq?;
+	trailingTypeSpecifier+;
 
 simpleTypeLengthModifier:
 	Short
@@ -338,61 +313,12 @@ simpleTypeSpecifier:
 	| Float
 	| simpleTypeLengthModifier? Double
 	| Void
-	| Auto
-	| decltypeSpecifier;
+	| Auto;
 
 theTypeName:
-	className
-	| typedefName
+    typedefName
 	| simpleTemplateId;
 
-decltypeSpecifier:
-	Decltype LeftParen (expression | Auto) RightParen;
-
-elaboratedTypeSpecifier:
-	classKey (
-		attributeSpecifierSeq? nestedNameSpecifier? Identifier
-		| simpleTemplateId
-		| nestedNameSpecifier Template? simpleTemplateId
-	);
-
-linkageSpecification:
-	Extern StringLiteral (
-		LeftBrace declarationseq? RightBrace
-		| declaration
-	);
-
-attributeSpecifierSeq: attributeSpecifier+;
-
-attributeSpecifier:
-	LeftBracket LeftBracket attributeList? RightBracket RightBracket
-	| alignmentspecifier;
-
-alignmentspecifier:
-	Alignas LeftParen (theTypeId | constantExpression) Ellipsis? RightParen;
-
-attributeList: attribute (Comma attribute)* Ellipsis?;
-
-attribute: (attributeNamespace Doublecolon)? Identifier attributeArgumentClause?;
-
-attributeNamespace: Identifier;
-
-attributeArgumentClause: LeftParen balancedTokenSeq? RightParen;
-
-balancedTokenSeq: balancedtoken+;
-
-balancedtoken:
-	LeftParen balancedTokenSeq RightParen
-	| LeftBracket balancedTokenSeq RightBracket
-	| LeftBrace balancedTokenSeq RightBrace
-	| ~(
-		LeftParen
-		| RightParen
-		| LeftBrace
-		| RightBrace
-		| LeftBracket
-		| RightBracket
-	)+;
 /*Declarators*/
 
 initDeclaratorList: initDeclarator (Comma initDeclarator)*;
@@ -406,27 +332,21 @@ declarator:
 pointerDeclarator: (pointerOperator Const?)* noPointerDeclarator;
 
 noPointerDeclarator:
-	declaratorid attributeSpecifierSeq?
+	declaratorid
 	| noPointerDeclarator (
 		parametersAndQualifiers
-		| LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
+		| LeftBracket constantExpression? RightBracket
 	)
 	| LeftParen pointerDeclarator RightParen;
 
 parametersAndQualifiers:
-	LeftParen parameterDeclarationClause? RightParen cvqualifierseq? refqualifier?
-	 attributeSpecifierSeq?;
+	LeftParen parameterDeclarationClause? RightParen cvqualifierseq? refqualifier?;
 
 trailingReturnType:
 	Arrow trailingTypeSpecifierSeq abstractDeclarator?;
 
 pointerOperator:
-	(And | AndAnd) attributeSpecifierSeq?
-	| nestedNameSpecifier? Star attributeSpecifierSeq? cvqualifierseq?;
-
-cvqualifierseq: cvQualifier+;
-
-cvQualifier: Const | Volatile;
+	nestedNameSpecifier? Star Const?;
 
 refqualifier: And | AndAnd;
 
@@ -447,10 +367,9 @@ noPointerAbstractDeclarator:
 	noPointerAbstractDeclarator (
 		parametersAndQualifiers
 		| noPointerAbstractDeclarator LeftBracket constantExpression? RightBracket
-			attributeSpecifierSeq?
 	)
 	| parametersAndQualifiers
-	| LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
+	| LeftBracket constantExpression? RightBracket
 	| LeftParen pointerAbstractDeclarator RightParen;
 
 abstractPackDeclarator:
@@ -459,7 +378,7 @@ abstractPackDeclarator:
 noPointerAbstractPackDeclarator:
 	noPointerAbstractPackDeclarator (
 		parametersAndQualifiers
-		| LeftBracket constantExpression? RightBracket attributeSpecifierSeq?
+		| LeftBracket constantExpression? RightBracket
 	)
 	| Ellipsis;
 
@@ -470,14 +389,14 @@ parameterDeclarationList:
 	parameterDeclaration (Comma parameterDeclaration)*;
 
 parameterDeclaration:
-	attributeSpecifierSeq? declSpecifierSeq (
+	declSpecifierSeq (
 		(declarator | abstractDeclarator?) (
 			Assign initializerClause
 		)?
 	);
 
 functionDefinition:
-	attributeSpecifierSeq? declSpecifierSeq? declarator functionBody;
+	declSpecifierSeq? declarator functionBody;
 
 functionBody:
 	constructorInitializer? compoundStatement
@@ -499,11 +418,6 @@ initializerList:
 	)*;
 
 bracedInitList: LeftBrace (initializerList Comma?)? RightBrace;
-
-
-pureSpecifier:
-	Assign val = OctalLiteral {if($val.text.compareTo("0")!=0) throw new InputMismatchException(this);
-		};
 
 /*Overloading*/
 
@@ -548,12 +462,6 @@ typeNameSpecifier:
 		| Template? simpleTemplateId
 	);
 
-/*Exception handling*/
-
-typeIdList: theTypeId Ellipsis? (Comma theTypeId Ellipsis?)*;
-
-/*Preprocessing directives*/
-
 /*Lexer*/
 
 theOperator:@
@@ -582,8 +490,6 @@ theOperator:@
 	| OrAssign
 	| Less Less
 	| Greater Greater
-	| RightShiftAssign
-	| LeftShiftAssign
 	| Equal
 	| NotEqual
 	| LessEqual
