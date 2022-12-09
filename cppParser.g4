@@ -32,14 +32,12 @@ primaryExpression:
 	literal+
 	| This
 	| LeftParen expression RightParen
-	| idExpression
-	| lambdaExpression;
+	| idExpression;
 
 idExpression: unqualifiedId | qualifiedId;
 
 unqualifiedId:
 	Identifier
-	| operatorFunctionId
 	| conversionFunctionId
 	| literalOperatorId
 	| Tilde (className | decltypeSpecifier)
@@ -53,28 +51,6 @@ nestedNameSpecifier:
 		Identifier
 		| Template? simpleTemplateId
 	) Doublecolon;
-lambdaExpression:
-	lambdaIntroducer lambdaDeclarator? compoundStatement;
-
-lambdaIntroducer: LeftBracket lambdaCapture? RightBracket;
-
-lambdaCapture:
-	captureList
-	| captureDefault (Comma captureList)?;
-
-captureDefault: And | Assign;
-
-captureList: capture (Comma capture)* Ellipsis?;
-
-capture: simpleCapture | initcapture;
-
-simpleCapture: And? Identifier | This;
-
-initcapture: And? Identifier initializer;
-
-lambdaDeclarator:
-	LeftParen parameterDeclarationClause? RightParen Mutable? exceptionSpecification?
-		attributeSpecifierSeq? trailingReturnType?;
 
 postfixExpression:
 	primaryExpression
@@ -117,7 +93,6 @@ unaryExpression:
 		| Ellipsis LeftParen Identifier RightParen
 	)
 	| Alignof LeftParen theTypeId RightParen
-	| noExceptExpression
 	| newExpression
 	| deleteExpression;
 
@@ -147,8 +122,6 @@ newInitializer:
 
 deleteExpression:
 	Doublecolon? Delete (LeftBracket RightBracket)? castExpression;
-
-noExceptExpression: Noexcept LeftParen expression RightParen;
 
 castExpression:
 	unaryExpression
@@ -202,8 +175,7 @@ conditionalExpression:
 
 assignmentExpression:
 	conditionalExpression
-	| logicalOrExpression assignmentOperator initializerClause
-	| throwExpression;
+	| logicalOrExpression assignmentOperator initializerClause;
 
 assignmentOperator:
 	Assign
@@ -232,7 +204,6 @@ statement:
 		| selectionStatement
 		| iterationStatement
 		| jumpStatement
-		| tryBlock
 	);
 
 labeledStatement:
@@ -507,7 +478,7 @@ noPointerDeclarator:
 
 parametersAndQualifiers:
 	LeftParen parameterDeclarationClause? RightParen cvqualifierseq? refqualifier?
-		exceptionSpecification? attributeSpecifierSeq?;
+	 attributeSpecifierSeq?;
 
 trailingReturnType:
 	Arrow trailingTypeSpecifierSeq abstractDeclarator?;
@@ -573,7 +544,6 @@ functionDefinition:
 
 functionBody:
 	constructorInitializer? compoundStatement
-	| functionTryBlock
 	| Assign (Default | Delete) Semi;
 
 initializer:
@@ -666,7 +636,7 @@ classOrDeclType:
 baseTypeSpecifier: classOrDeclType;
 
 accessSpecifier: Private | Protected | Public;
-/*Special member functions*/
+/*Special member functions*/@
 
 conversionFunctionId: Operator conversionTypeId;
 
@@ -688,7 +658,6 @@ memInitializer:
 meminitializerid: classOrDeclType | Identifier;
 /*Overloading*/
 
-operatorFunctionId: Operator theOperator;
 
 literalOperatorId:
 	Operator (
@@ -716,7 +685,7 @@ simpleTemplateId:
 
 templateId:
 	simpleTemplateId
-	| (operatorFunctionId | literalOperatorId) Less templateArgumentList? Greater;
+	| literalOperatorId Less templateArgumentList? Greater;
 
 templateName: Identifier;
 
@@ -736,42 +705,13 @@ explicitInstantiation: Extern? Template declaration;
 explicitSpecialization: Template Less Greater declaration;
 /*Exception handling*/
 
-tryBlock: Try compoundStatement handlerSeq;
-
-functionTryBlock:
-	Try constructorInitializer? compoundStatement handlerSeq;
-
-handlerSeq: handler+;
-
-handler:
-	Catch LeftParen exceptionDeclaration RightParen compoundStatement;
-
-exceptionDeclaration:
-	attributeSpecifierSeq? typeSpecifierSeq (
-		declarator
-		| abstractDeclarator
-	)?
-	| Ellipsis;
-
-throwExpression: Throw assignmentExpression?;
-
-exceptionSpecification:
-	dynamicExceptionSpecification
-	| noeExceptSpecification;
-
-dynamicExceptionSpecification:
-	Throw LeftParen typeIdList? RightParen;
-
 typeIdList: theTypeId Ellipsis? (Comma theTypeId Ellipsis?)*;
 
-noeExceptSpecification:
-	Noexcept LeftParen constantExpression RightParen
-	| Noexcept;
 /*Preprocessing directives*/
 
 /*Lexer*/
 
-theOperator:
+theOperator:@
 	New (LeftBracket RightBracket)?
 	| Delete (LeftBracket RightBracket)?
 	| Plus
