@@ -18,7 +18,7 @@ int main(){
     {
         Function: {
             Function: printf,
-            LPAREN: {
+            LeftParen: {
                 
             }
         }

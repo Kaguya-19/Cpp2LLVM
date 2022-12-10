@@ -20,13 +20,21 @@ class Lexer():
     A Lexer for C++
     '''
     
-    key_dict = { 'alignas': 'Alignas', 'alignof': 'Alignof', 'asm': 'Asm', 'auto': 'Auto', 'bool': 'Bool', 'break': 'Break', 'case': 'Case', 'catch': 'Catch', 'char': 'Char', 'char16_t': 'Char16_t', 'char32_t': 'Char32_t', 'class': 'Class', 'const': 'Const', 'constexpr': 'Constexpr', 'const_cast': 'Const_cast', 'continue': 'Continue', 'decltype': 'Decltype', 'default': 'Default', 'delete': 'Delete', 'do': 'Do', 'double': 'Double', 'dynamic_cast': 'Dynamic_cast', 'else': 'Else', 'enum': 'Enum', 'explicit': 'Explicit', 'export': 'Export', 'extern': 'Extern', 'false': 'BooleanLiteral', 'float': 'Float', 'for': 'For', 'friend': 'Friend', 'goto': 'Goto', 'if': 'If', 'inline': 'Inline', 'int': 'Int', 'long': 'Long', 'mutable': 'Mutable', 'namespace': 'Namespace', 'new': 'New', 'noexcept': 'Noexcept', 'nullptr': 'Nullptr', 'operator': 'Operator',
+    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','MultiLineMacro','Directive','Identifier','']
+    
+    key_dict = { 'alignas': 'Alignas', 'alignof': 'Alignof', 'asm': 'Asm', 'auto': 'Auto', 'bool': 'Bool', 'break': 'Break', 'case': 'Case', 'catch': 'Catch', 'char': 'Char', 'char16_t': 'Char16_t', 'char32_t': 'Char32_t', 'class': 'Class', 'const': 'Const', 'constexpr': 'Constexpr', 'const_cast': 'Const_cast', 'continue': 'Continue', 'decltype': 'Decltype', 'default': 'Default', 'delete': 'Delete', 'do': 'Do', 'double': 'Double', 'dynamic_cast': 'Dynamic_cast', 'else': 'Else', 'enum': 'Enum', 'explicit': 'Explicit', 'export': 'Export', 'extern': 'Extern', 'false': 'BooleanLiteral', 'float': 'Float', 'for': 'For', 'friend': 'Friend', 'goto': 'Goto', 'if': 'If', 'inline': 'Inline', 'int': 'Int', 'long': 'Long', 'mutable': 'Mutable', 'namespace': 'Namespace', 'new': 'New', 'noexcept': 'Noexcept', 'nullptr': 'Nullptr', 'operator': 'Operator','override':'Override','final':'Final','protected':'Protected','public':'Public',
                 'private': 'Private', 'register': 'Register', 'reinterpret_cast': 'Reinterpret_cast', 'return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'static': 'Static', 'static_assert': 'Static_assert', 'static_cast': 'Static_cast', 'struct': 'Struct', 'switch': 'Switch', 'template': 'Template', 'this': 'This', 'thread_local': 'Thread_local', 'throw': 'Throw', 'true': 'BooleanLiteral', 'try': 'Try', 'typedef': 'Typedef', 'typeid': 'Typeid', 'typename': 'Typename', 'union': 'Union', 'unsigned': 'Unsigned', 'using': 'Using', 'virtual': 'Virtual', 'void': 'Void', 'volatile': 'Volatile', 'wchar_t': 'Wchar_t', 'while': 'While' }
     my_key_dict = {'stack':'Stack','push':'push','empty':'empty','pop':'pop','top':'top',
                    'istream':'Istream','ostream':'Ostream','cin':'Istream_cin','cout':'Ostream_cout','endl':'Ostream_endl',
                    'string':'String','length':'Length','vector':'Vector','find':'Find','push_back':'Push_Back'} #将系统库函数定义为关键字
     key_dict.update(my_key_dict)
-    optr_dict = { '(': 'LPAREN', ')': 'RPAREN', '{': 'LBRACE', '}': 'RBRACE', '[': 'LBRACKET', ']': 'RBRACKET', ';': 'SEMI', ',': 'COMMA', '.': 'DOT', '+': 'PLUS', '-': 'MINUS', '*': 'MUL', '/': 'DIV', '%': 'MOD', '++': 'INC', '--': 'DEC', '<<': 'LSHIFT', '>>': 'RSHIFT', '<': 'LT', '<=': 'LTE', '>': 'GT', '>=': 'GTE', '==': 'EQ', '!=': 'NEQ', '&': 'AND', '^': 'XOR', '|': 'OR', '&&': 'LAND', '||': 'LOR', '!': 'NOT', '~': 'BNOT', '?': 'TERNARY', ':': 'COLON', '=': 'ASSIGN', '+=': 'ADD_ASSIGN', '-=': 'SUB_ASSIGN', '*=': 'MUL_ASSIGN', '/=': 'DIV_ASSIGN', '%=': 'MOD_ASSIGN', '<<=': 'LSHIFT_ASSIGN', '>>=': 'RSHIFT_ASSIGN', '&=': 'AND_ASSIGN', '^=': 'XOR_ASSIGN', '|=': 'OR_ASSIGN', '->': 'ARROW', '.*': 'DOT_STAR', '...': 'ELLIPSIS' , '::': 'SCOPE' }
+    for value in key_dict.values():
+        cpp_tokens.append(value)
+    
+    optr_dict = { '(': 'LeftParen', ')': 'RightParen', '[': 'LeftBracket', ']': 'RightBracket', '{': 'LeftBrace', '}': 'RightBrace', '+': 'Plus', '-': 'Minus', '*': 'Star', '/': 'Div', '%': 'Mod', '^': 'Caret', '&': 'And', '|': 'Or', '~': 'Tilde', '!': 'Not', '=': 'Assign', '<': 'Less', '>': 'Greater', '?': 'Question', ':': 'Colon', ';': 'Semi', ',': 'Comma', '.': 'Dot', '...': 'Ellipsis', '->': 'Arrow', '++': 'PlusPlus', '--': 'MinusMinus', '<<': 'LeftShift', '>>': 'RightShift', '&&': 'AndAnd', '||': 'OrOr', '*=': 'StarAssign', '/=': 'DivAssign', '%=': 'ModAssign', '+=': 'PlusAssign', '-=': 'MinusAssign', '<<=': 'LeftShiftAssign', '>>=': 'RightShiftAssign', '&=': 'AndAssign', '^=': 'XorAssign', '|=': 'OrAssign', '==': 'Equal', '!=': 'NotEqual', '<=': 'LessEqual', '>=': 'GreaterEqual', '->*': 'ArrowStar', '#': 'Pound', '##': 'PoundPound' ,'::':'Doublecolon','.*':'DotStar'}
+    for value in optr_dict.values():
+        cpp_tokens.append(value)
+        
     DIGIT = re.compile(r'\d')
     NONDIGIT = re.compile(r'[a-zA-Z_]')
     IDPARRERN = re.compile(r'[a-zA-Z0-9_]*')
@@ -74,7 +82,7 @@ class Lexer():
     
     def skip(self):
         self.old_pos = self.pos
-        while self.advance_word(Lexer.Skip):
+        while self.advance_word(Lexer.Skip) != None :
             self.old_pos = self.pos
             continue
         return self.current_char
@@ -102,10 +110,11 @@ class Lexer():
                 self.error()
             
             if token:
-                print(token)
+                # print(token)
                 tokens.append(token)
             else:
                 self.error()
+        tokens.append(Token('EOF',None,self.pos,self.pos))
         return tokens
     
     def scan_identifier(self):
@@ -122,7 +131,7 @@ class Lexer():
         if result in Lexer.key_dict:
             return Token(Lexer.key_dict[result], result, self.old_pos, self.pos)
         else:
-            return Token('ID', result, self.old_pos, self.pos)
+            return Token('Identifier', result, self.old_pos, self.pos)
     
     def scan_number(self):
         result = ''

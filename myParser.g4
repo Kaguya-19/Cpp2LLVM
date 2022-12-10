@@ -1,5 +1,6 @@
-functionBody:
+// functionBody:
     
+translationUnit: literal;
 
 literal:
 	IntegerLiteral
@@ -7,5 +8,11 @@ literal:
 	| FloatingLiteral
 	| StringLiteral
 	| BooleanLiteral
-	| PointerLiteral
-	| UserDefinedLiteral;
+	| Nullptr;
+	// | UserDefinedLiteral;
+
+IntegerLiteral:
+	DecimalLiteral
+	| OctalLiteral
+	| HexadecimalLiteral
+	| BinaryLiteral;
