@@ -1,29 +1,29 @@
-/*--------以下为了vS2019编译通过-------*/
+/*--------For Complie-------*/
 // #include<iostream>
 // #include<stack>
 // #include<cstdio>
 // #pragma warning(disable:4996)
 
 
-//#define N_OPTR 7 //运算符数
+//#define N_OPTR 7 
 // using namespace std;
-/*------结束------*/
+/*------END------*/
 
 const int N_OPTR = 7;
 
-const char optrs [N_OPTR] = {'+', '-', '*', '/', '(', ')','\0'}; //运算符集合
-const char pri[N_OPTR][N_OPTR] = { //运算符优先等级 [栈顶] [当前]
-   /*              |-------------------- 当 前 运 算 符 ------------| */
+const char optrs [N_OPTR] = {'+', '-', '*', '/', '(', ')','\0'}; 
+const char pri[N_OPTR][N_OPTR] = { 
+   /*              |-------------------- ------------| */
    /*              +    -     *     /             (     )    \0 */
 	/* --  + */    '>',   '>',   '<',   '<',   '<',   '>',   '>',
 	/* |   - */    '>',   '>',   '<',   '<',   '<',   '>',   '>',
-	/* 栈  * */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
-	/* 顶  / */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
-	/* 符  ( */    '<',   '<',   '<',   '<',   '<',   '=',   ' ',
-	/* |   ) */    ' ',   ' ',   ' ',   ' ',   ' ',   ' ',   ' ',//不会在栈顶的
+	/*   * */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
+	/*  / */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
+	/*   ( */    '<',   '<',   '<',   '<',   '<',   '=',   ' ',
+	/* |   ) */    ' ',   ' ',   ' ',   ' ',   ' ',   ' ',   ' ',
 	/* -- \0 */    '<',   '<',   '<',   '<',   '<',   ' ',   '='
 };
-//以上来自数据结构课件
+
 
 bool isdigit(char c) {
 	return c >= '0' && c <= '9';
@@ -61,18 +61,18 @@ float evaluate ( char* S ) {
 		 isBeforeDigit = true;
 		 S++;
 	  }
-	  else //若当前字符为运算符，则
+	  else 
 	  {
 		  if (isBeforeDigit) {
 			  opnd.push(currentNum);
 			  currentNum = 0;
 			  isBeforeDigit = false;
 		  }
-		  else if (*S == '-') opnd.push(0); //若当前字符为负号，则将0入栈
+		  else if (*S == '-') opnd.push(0); 
 
 		  switch (orderBetween(optr.top(), *S)) {
-		  case '<': //栈顶运算符优先级更低时
-			  optr.push(*S); S++; //计算推迟，当前运算符进栈
+		  case '<': 
+			  optr.push(*S); S++; 
 			  break;
 		  case '=':
 			  optr.pop(); S++;

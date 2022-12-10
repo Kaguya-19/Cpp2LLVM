@@ -1,4 +1,4 @@
-/*--------以下为了vS2019编译通过-------*/
+/*---------------*/
 // #include <string>
 // #include <iostream>
 // #include<cstdio>
@@ -6,7 +6,7 @@
 // #pragma warning(disable:4996)
 // using namespace std;
 
-/*------以下是使用自己编译器时的做法-------*/
+/*-------------*/
 
 vector<int> Kmp(string text, string key) 
 {
