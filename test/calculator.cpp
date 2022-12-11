@@ -9,6 +9,20 @@
 // using namespace std;
 /*------END------*/
 
+/*---------For Antlr------------*/
+int find(char* arr, char* end, char c) {};
+int printf(const char* format){};
+int scanf(const char* format){};
+template <typename T> class stack
+{
+public:
+	void push(T t) {};
+	void pop() {};
+	T top() {};
+};
+/*---------END---------*/	
+
+
 const int N_OPTR = 7;
 
 const char optrs [N_OPTR] = {'+', '-', '*', '/', '(', ')','\0'}; 

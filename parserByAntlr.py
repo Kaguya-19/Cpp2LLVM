@@ -1,8 +1,9 @@
 import sys
 from antlr4 import *
 from CPP14Lexer import CPP14Lexer
-from CPP14Parser import CPP14Parser
-from CPP14ParserVisitor import CPP14ParserVisitor
+# from CPP14Parser import CPP14Parser
+# from CPP14ParserVisitor import CPP14ParserVisitor
+from myParser import myParser
  
 def toDict(tree):
     '''Converts an ANTLR tree to a dictionary.'''
@@ -18,7 +19,8 @@ def toDict(tree):
 def main(argv=sys.argv):
     lexer = CPP14Lexer(StdinStream())
     stream = CommonTokenStream(lexer)
-    parser = CPP14Parser(stream)
+    # parser = CPP14Parser(stream)
+    parser = myParser(stream)
     tree = parser.translationUnit()
     dictTree = toDict(tree)
     import json

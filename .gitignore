@@ -6,13 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
-*.interp
-*.tokens
-
 # Distribution / packaging
 .Python
 .vscode/
-.antlr/
+
 build/
 develop-eggs/
 dist/

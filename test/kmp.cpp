@@ -8,6 +8,26 @@
 
 /*-------------*/
 
+/*---------For Antlr------------*/
+int printf(const char* format,...){};
+int scanf(const char* format,...){};
+int getline(string& str){};
+class string
+{
+	int length() {};
+	char operator[](int i) {};
+};
+template <typename T> class vector
+{
+public:
+	void push_back(T t) {};
+	void pop_back() {};
+	T back() {};
+	int size() {};
+	T operator[](int i) {};
+};
+/*---------END---------*/
+
 vector<int> Kmp(string text, string key) 
 {
 	vector<int> ans;

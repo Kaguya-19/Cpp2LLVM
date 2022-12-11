@@ -24,83 +24,8 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#unqualifiedId.
-    def visitUnqualifiedId(self, ctx:CPP14Parser.UnqualifiedIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#qualifiedId.
-    def visitQualifiedId(self, ctx:CPP14Parser.QualifiedIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#nestedNameSpecifier.
-    def visitNestedNameSpecifier(self, ctx:CPP14Parser.NestedNameSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#lambdaExpression.
-    def visitLambdaExpression(self, ctx:CPP14Parser.LambdaExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#lambdaIntroducer.
-    def visitLambdaIntroducer(self, ctx:CPP14Parser.LambdaIntroducerContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#lambdaCapture.
-    def visitLambdaCapture(self, ctx:CPP14Parser.LambdaCaptureContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#captureDefault.
-    def visitCaptureDefault(self, ctx:CPP14Parser.CaptureDefaultContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#captureList.
-    def visitCaptureList(self, ctx:CPP14Parser.CaptureListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#capture.
-    def visitCapture(self, ctx:CPP14Parser.CaptureContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#simpleCapture.
-    def visitSimpleCapture(self, ctx:CPP14Parser.SimpleCaptureContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#initcapture.
-    def visitInitcapture(self, ctx:CPP14Parser.InitcaptureContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#lambdaDeclarator.
-    def visitLambdaDeclarator(self, ctx:CPP14Parser.LambdaDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#postfixExpression.
     def visitPostfixExpression(self, ctx:CPP14Parser.PostfixExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#typeIdOfTheTypeId.
-    def visitTypeIdOfTheTypeId(self, ctx:CPP14Parser.TypeIdOfTheTypeIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#expressionList.
-    def visitExpressionList(self, ctx:CPP14Parser.ExpressionListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#pseudoDestructorName.
-    def visitPseudoDestructorName(self, ctx:CPP14Parser.PseudoDestructorNameContext):
         return self.visitChildren(ctx)
 
 
@@ -119,11 +44,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#newPlacement.
-    def visitNewPlacement(self, ctx:CPP14Parser.NewPlacementContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#newTypeId.
     def visitNewTypeId(self, ctx:CPP14Parser.NewTypeIdContext):
         return self.visitChildren(ctx)
@@ -139,18 +59,8 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#newInitializer.
-    def visitNewInitializer(self, ctx:CPP14Parser.NewInitializerContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#deleteExpression.
     def visitDeleteExpression(self, ctx:CPP14Parser.DeleteExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#noExceptExpression.
-    def visitNoExceptExpression(self, ctx:CPP14Parser.NoExceptExpressionContext):
         return self.visitChildren(ctx)
 
 
@@ -224,11 +134,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#assignmentExpression.
-    def visitAssignmentExpression(self, ctx:CPP14Parser.AssignmentExpressionContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#assignmentOperator.
     def visitAssignmentOperator(self, ctx:CPP14Parser.AssignmentOperatorContext):
         return self.visitChildren(ctx)
@@ -289,23 +194,8 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#forRangeDeclaration.
-    def visitForRangeDeclaration(self, ctx:CPP14Parser.ForRangeDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#forRangeInitializer.
-    def visitForRangeInitializer(self, ctx:CPP14Parser.ForRangeInitializerContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#jumpStatement.
     def visitJumpStatement(self, ctx:CPP14Parser.JumpStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#declarationStatement.
-    def visitDeclarationStatement(self, ctx:CPP14Parser.DeclarationStatementContext):
         return self.visitChildren(ctx)
 
 
@@ -319,33 +209,8 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#blockDeclaration.
-    def visitBlockDeclaration(self, ctx:CPP14Parser.BlockDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#aliasDeclaration.
-    def visitAliasDeclaration(self, ctx:CPP14Parser.AliasDeclarationContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#simpleDeclaration.
     def visitSimpleDeclaration(self, ctx:CPP14Parser.SimpleDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#staticAssertDeclaration.
-    def visitStaticAssertDeclaration(self, ctx:CPP14Parser.StaticAssertDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#emptyDeclaration.
-    def visitEmptyDeclaration(self, ctx:CPP14Parser.EmptyDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeDeclaration.
-    def visitAttributeDeclaration(self, ctx:CPP14Parser.AttributeDeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -356,16 +221,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CPP14Parser#declSpecifierSeq.
     def visitDeclSpecifierSeq(self, ctx:CPP14Parser.DeclSpecifierSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#storageClassSpecifier.
-    def visitStorageClassSpecifier(self, ctx:CPP14Parser.StorageClassSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#functionSpecifier.
-    def visitFunctionSpecifier(self, ctx:CPP14Parser.FunctionSpecifierContext):
         return self.visitChildren(ctx)
 
 
@@ -389,11 +244,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#trailingTypeSpecifierSeq.
-    def visitTrailingTypeSpecifierSeq(self, ctx:CPP14Parser.TrailingTypeSpecifierSeqContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#simpleTypeLengthModifier.
     def visitSimpleTypeLengthModifier(self, ctx:CPP14Parser.SimpleTypeLengthModifierContext):
         return self.visitChildren(ctx)
@@ -411,156 +261,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CPP14Parser#theTypeName.
     def visitTheTypeName(self, ctx:CPP14Parser.TheTypeNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#decltypeSpecifier.
-    def visitDecltypeSpecifier(self, ctx:CPP14Parser.DecltypeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#elaboratedTypeSpecifier.
-    def visitElaboratedTypeSpecifier(self, ctx:CPP14Parser.ElaboratedTypeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumName.
-    def visitEnumName(self, ctx:CPP14Parser.EnumNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumSpecifier.
-    def visitEnumSpecifier(self, ctx:CPP14Parser.EnumSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumHead.
-    def visitEnumHead(self, ctx:CPP14Parser.EnumHeadContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#opaqueEnumDeclaration.
-    def visitOpaqueEnumDeclaration(self, ctx:CPP14Parser.OpaqueEnumDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumkey.
-    def visitEnumkey(self, ctx:CPP14Parser.EnumkeyContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumbase.
-    def visitEnumbase(self, ctx:CPP14Parser.EnumbaseContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumeratorList.
-    def visitEnumeratorList(self, ctx:CPP14Parser.EnumeratorListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumeratorDefinition.
-    def visitEnumeratorDefinition(self, ctx:CPP14Parser.EnumeratorDefinitionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#enumerator.
-    def visitEnumerator(self, ctx:CPP14Parser.EnumeratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#namespaceName.
-    def visitNamespaceName(self, ctx:CPP14Parser.NamespaceNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#originalNamespaceName.
-    def visitOriginalNamespaceName(self, ctx:CPP14Parser.OriginalNamespaceNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#namespaceDefinition.
-    def visitNamespaceDefinition(self, ctx:CPP14Parser.NamespaceDefinitionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#namespaceAlias.
-    def visitNamespaceAlias(self, ctx:CPP14Parser.NamespaceAliasContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#namespaceAliasDefinition.
-    def visitNamespaceAliasDefinition(self, ctx:CPP14Parser.NamespaceAliasDefinitionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#qualifiednamespacespecifier.
-    def visitQualifiednamespacespecifier(self, ctx:CPP14Parser.QualifiednamespacespecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#usingDeclaration.
-    def visitUsingDeclaration(self, ctx:CPP14Parser.UsingDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#usingDirective.
-    def visitUsingDirective(self, ctx:CPP14Parser.UsingDirectiveContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#asmDefinition.
-    def visitAsmDefinition(self, ctx:CPP14Parser.AsmDefinitionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#linkageSpecification.
-    def visitLinkageSpecification(self, ctx:CPP14Parser.LinkageSpecificationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeSpecifierSeq.
-    def visitAttributeSpecifierSeq(self, ctx:CPP14Parser.AttributeSpecifierSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeSpecifier.
-    def visitAttributeSpecifier(self, ctx:CPP14Parser.AttributeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#alignmentspecifier.
-    def visitAlignmentspecifier(self, ctx:CPP14Parser.AlignmentspecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeList.
-    def visitAttributeList(self, ctx:CPP14Parser.AttributeListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attribute.
-    def visitAttribute(self, ctx:CPP14Parser.AttributeContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeNamespace.
-    def visitAttributeNamespace(self, ctx:CPP14Parser.AttributeNamespaceContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#attributeArgumentClause.
-    def visitAttributeArgumentClause(self, ctx:CPP14Parser.AttributeArgumentClauseContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#balancedTokenSeq.
-    def visitBalancedTokenSeq(self, ctx:CPP14Parser.BalancedTokenSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#balancedtoken.
-    def visitBalancedtoken(self, ctx:CPP14Parser.BalancedtokenContext):
         return self.visitChildren(ctx)
 
 
@@ -594,11 +294,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#trailingReturnType.
-    def visitTrailingReturnType(self, ctx:CPP14Parser.TrailingReturnTypeContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#pointerOperator.
     def visitPointerOperator(self, ctx:CPP14Parser.PointerOperatorContext):
         return self.visitChildren(ctx)
@@ -626,31 +321,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CPP14Parser#theTypeId.
     def visitTheTypeId(self, ctx:CPP14Parser.TheTypeIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#abstractDeclarator.
-    def visitAbstractDeclarator(self, ctx:CPP14Parser.AbstractDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#pointerAbstractDeclarator.
-    def visitPointerAbstractDeclarator(self, ctx:CPP14Parser.PointerAbstractDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#noPointerAbstractDeclarator.
-    def visitNoPointerAbstractDeclarator(self, ctx:CPP14Parser.NoPointerAbstractDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#abstractPackDeclarator.
-    def visitAbstractPackDeclarator(self, ctx:CPP14Parser.AbstractPackDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#noPointerAbstractPackDeclarator.
-    def visitNoPointerAbstractPackDeclarator(self, ctx:CPP14Parser.NoPointerAbstractPackDeclaratorContext):
         return self.visitChildren(ctx)
 
 
@@ -724,11 +394,6 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#classVirtSpecifier.
-    def visitClassVirtSpecifier(self, ctx:CPP14Parser.ClassVirtSpecifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#classKey.
     def visitClassKey(self, ctx:CPP14Parser.ClassKeyContext):
         return self.visitChildren(ctx)
@@ -754,68 +419,13 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#virtualSpecifierSeq.
-    def visitVirtualSpecifierSeq(self, ctx:CPP14Parser.VirtualSpecifierSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#virtualSpecifier.
-    def visitVirtualSpecifier(self, ctx:CPP14Parser.VirtualSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#pureSpecifier.
-    def visitPureSpecifier(self, ctx:CPP14Parser.PureSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#baseClause.
-    def visitBaseClause(self, ctx:CPP14Parser.BaseClauseContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#baseSpecifierList.
     def visitBaseSpecifierList(self, ctx:CPP14Parser.BaseSpecifierListContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#baseSpecifier.
-    def visitBaseSpecifier(self, ctx:CPP14Parser.BaseSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#classOrDeclType.
-    def visitClassOrDeclType(self, ctx:CPP14Parser.ClassOrDeclTypeContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#baseTypeSpecifier.
-    def visitBaseTypeSpecifier(self, ctx:CPP14Parser.BaseTypeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#accessSpecifier.
     def visitAccessSpecifier(self, ctx:CPP14Parser.AccessSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#conversionFunctionId.
-    def visitConversionFunctionId(self, ctx:CPP14Parser.ConversionFunctionIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#conversionTypeId.
-    def visitConversionTypeId(self, ctx:CPP14Parser.ConversionTypeIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#conversionDeclarator.
-    def visitConversionDeclarator(self, ctx:CPP14Parser.ConversionDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#constructorInitializer.
-    def visitConstructorInitializer(self, ctx:CPP14Parser.ConstructorInitializerContext):
         return self.visitChildren(ctx)
 
 
@@ -889,68 +499,8 @@ class CPP14ParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CPP14Parser#typeNameSpecifier.
-    def visitTypeNameSpecifier(self, ctx:CPP14Parser.TypeNameSpecifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CPP14Parser#explicitInstantiation.
     def visitExplicitInstantiation(self, ctx:CPP14Parser.ExplicitInstantiationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#explicitSpecialization.
-    def visitExplicitSpecialization(self, ctx:CPP14Parser.ExplicitSpecializationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#tryBlock.
-    def visitTryBlock(self, ctx:CPP14Parser.TryBlockContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#functionTryBlock.
-    def visitFunctionTryBlock(self, ctx:CPP14Parser.FunctionTryBlockContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#handlerSeq.
-    def visitHandlerSeq(self, ctx:CPP14Parser.HandlerSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#handler.
-    def visitHandler(self, ctx:CPP14Parser.HandlerContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#exceptionDeclaration.
-    def visitExceptionDeclaration(self, ctx:CPP14Parser.ExceptionDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#throwExpression.
-    def visitThrowExpression(self, ctx:CPP14Parser.ThrowExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#exceptionSpecification.
-    def visitExceptionSpecification(self, ctx:CPP14Parser.ExceptionSpecificationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#dynamicExceptionSpecification.
-    def visitDynamicExceptionSpecification(self, ctx:CPP14Parser.DynamicExceptionSpecificationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#typeIdList.
-    def visitTypeIdList(self, ctx:CPP14Parser.TypeIdListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CPP14Parser#noeExceptSpecification.
-    def visitNoeExceptSpecification(self, ctx:CPP14Parser.NoeExceptSpecificationContext):
         return self.visitChildren(ctx)
 
 
@@ -961,6 +511,16 @@ class CPP14ParserVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CPP14Parser#literal.
     def visitLiteral(self, ctx:CPP14Parser.LiteralContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CPP14Parser#myId.
+    def visitMyId(self, ctx:CPP14Parser.MyIdContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CPP14Parser#myClass.
+    def visitMyClass(self, ctx:CPP14Parser.MyClassContext):
         return self.visitChildren(ctx)
 
 
