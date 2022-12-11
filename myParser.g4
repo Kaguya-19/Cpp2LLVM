@@ -1,18 +1,18 @@
 // functionBody:
     
-translationUnit: literal;
+translationUnit: DecimalLiteral;
 
-literal:
-	IntegerLiteral;
-	// | CharacterLiteral
-	// | FloatingLiteral
-	// | StringLiteral
-	// | BooleanLiteral
-	// | Nullptr;
-	// | UserDefinedLiteral;
+// literal:
+// 	IntegerLiteral;
+// 	// | CharacterLiteral
+// 	// | FloatingLiteral
+// 	// | StringLiteral
+// 	// | BooleanLiteral
+// 	// | Nullptr;
+// 	// | UserDefinedLiteral;
 
-IntegerLiteral:
-	DecimalLiteral?;
+// IntegerLiteral:
+// 	DecimalLiteral;
 	// | OctalLiteral
 	// | HexadecimalLiteral
 	// | BinaryLiteral;

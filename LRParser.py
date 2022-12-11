@@ -10,7 +10,7 @@ class Parser():
     def __init__(self, grammar_file, tokens=[]):
         self.grammar = self.read_grammar_g4(grammar_file)
         self.tokens = tokens
-        self.nonterminals = list(self.grammar.keys())
+        self.nonterminals = list(self.grammar.keys()) 
         self.action = {}
         self.goto = {}
         self.build_table()
@@ -143,7 +143,7 @@ class Parser():
         '''
         # Build the first and follow sets
         self.first = {}
-        self.follow = {}
+        # self.follow = {}
         self.start = 'translationUnit'
         
         # augment the grammar
@@ -151,7 +151,7 @@ class Parser():
         
         # compute the first and follow sets
         self.compute_first_total()
-        self.compute_follow_total()
+        # self.compute_follow_total()
         
         # Build the parsing table
         self.compute_states()
@@ -205,7 +205,7 @@ class Parser():
                 if compute_first(self,lhs):
                     changed = True
         
-        print(self.first)
+        # print(self.first)
                     
     def compute_follow_total(self):       
         '''
@@ -232,11 +232,11 @@ class Parser():
                                     first -= set([''])
                                     break
                         
-                        if token not in self.follow:
-                            self.follow[token] = set()
+                        # if token not in self.follow:
+                        #     self.follow[token] = set()
                         
                         # Add the first set to the follow set
-                        if first - self.follow[token]:
+                        if (first - set([''])) - self.follow[token]:
                             self.follow[token] |= (first - set(['']))
                             changed = True
                             
@@ -244,62 +244,80 @@ class Parser():
                         if '' in first and self.follow[lhs] - self.follow[token]:
                             self.follow[token] |= self.follow[lhs]
                             changed = True
-                        compute_follow(self,token,self.grammar[token])
+                        # compute_follow(self,token,self.grammar[token])
             return changed
             
         
         # Initialize the follow sets
-        for token in self.tokens:
+        for token in self.nonterminals:
             self.follow[token] = set()
             
-        # Add the '#' symbol to the follow set of the start symbol
-        self.follow[self.start] = set()
-        self.follow[self.start].add('#')
+        # Add the 'EOF' symbol to the follow set of the start symbol
+        self.follow['S\''] = set()
+        self.follow['S\''].add('EOF')
         
         # Compute the follow sets
-        compute_follow(self,self.start,self.grammar[self.start])
+        changed = True
+        while changed:
+            changed = False
+            for lhs, rhs in self.grammar.items():
+                if compute_follow(self,lhs,rhs):
+                    changed = True
         
         # print(self.follow)
     
     def compute_closure(self, I):
         '''
-        Compute the closure of a set of items.
+        Compute the closure of LR(1) items.
         '''
         changed = True
         J = I
         while changed:
             changed = False
             for item in J:
-                if item[1] < len(item[0]):
-                    token = item[0][item[1]] # item[1] is the dot position
+                if item['dot'] < len(item['rhs']):
+                    token = item['rhs'][item['dot']]
                     if token not in self.tokens:
+                        # compute the first(\beta a) set
+                        bs = set()
+                        j = item['dot'] + 1
+                        while j < len(item['rhs']):
+                            bs += self.first[item['rhs'][j]] - set([''])
+                            if '' not in self.first[item['rhs'][j]]:
+                                break
+                            j += 1
+                        if j == len(item['rhs']):
+                            bs.add(item['lookahead']) # lookahead is terminal
                         for rule in self.grammar[token]:
-                            if (rule,0) not in J:
-                                J.append((rule,0))
-                                changed = True
+                            for b in bs:
+                                if {'lhs':token,'rhs':rule,'lookahead':b,'dot':0} not in J:
+                                    J.append({'lhs':token,'rhs':rule,'lookahead':b,'dot':0})
+                                    changed = True
+
         return J
     
     def compute_go(self, I, X):
         '''
-        Compute the goto of a set of items.
+        Compute the go of a set of items.
         '''
         J = []
         for item in I:
-            if item[1] < len(item[0]):
-                token = item[0][item[1]]
+            if item['dot'] < len(item['rhs']):
+                token = item['rhs'][item['dot']]
                 if token == X:
-                    if (item[0],item[1]+1) not in J:
-                        J.append((item[0],item[1]+1))
+                    if {'lhs':item['lhs'],'rhs':item['rhs'],'lookahead':item['lookahead'],'dot':item['dot']+1} not in J:
+                        J.append({'lhs':item['lhs'],'rhs':item['rhs'],'lookahead':item['lookahead'],'dot':item['dot']+1})
+        # print(J)
         return self.compute_closure(J)
                 
     
     def compute_states(self):
         '''
-        Compute the states of the LR(0) automaton.
+        Compute the states of the LR(1) automaton.
         '''
         # Initialize the states
         self.states = []
-        self.states.append(self.compute_closure([(self.grammar[self.start][0],0)]))
+        self.states.append(self.compute_closure([{'lhs':'S\'','rhs':[self.start],'lookahead':'EOF','dot':0}]))
         
         # Compute the states
         changed = True
@@ -311,8 +329,15 @@ class Parser():
                     if go and go not in self.states:
                         self.states.append(go)
                         changed = True
+                for token in self.nonterminals:
+                    go = self.compute_go(state,token)
+                    if go and go not in self.states:
+                        self.states.append(go)
+                        changed = True
                         
-        # print(self.states)
+        print('STATES:')
+        for state in self.states:
+            print(state)
                                
     def build_action(self):
         '''
@@ -325,21 +350,38 @@ class Parser():
             self.action[str(state)] = {}
             for token in self.tokens:
                 self.action[str(state)][token] = None
-            self.action[str(state)]['#'] = None
+            for token in self.nonterminals:
+                self.action[str(state)][token] = None
+            self.action[str(state)]['EOF'] = None
+            self.action[str(state)]['S\''] = None
         
         # Build the action table
+        
         for i,state in enumerate(self.states):
             for item in state:
-                if item[1] == len(item[0]):
-                    if item[0][0] == self.start:
-                        self.action[str(state)]['#'] = ('acc',None)
+                # handle epsilon
+                # if item['rhs'] == ['']:
+                #     self.action[str(state)][item['lookahead']] = ('r',item)
+                #     continue
+                
+                if item['dot'] == len(item['rhs']):
+                    if item['lhs'] == 'S\'' and item['lookahead'] == 'EOF' and item['rhs'] == [self.start]:
+                        self.action[str(state)]['EOF'] = ('acc',None)
                     else:
-                        for follow in self.follow[item[0][0]]:
-                            self.action[str(state)][follow] = ('r',item[0])
+                        finded = False
+                        for the_state in self.states:
+                            if item in the_state:
+                                finded = True
+                                break
+                        if not finded:
+                            print('ERROR: item not in states')
+                            return  
+                        self.action[str(state)][item['lookahead']] = ('r',item)
                 else:
-                    token = item[0][item[1]]
+                    token = item['rhs'][item['dot']]
                     if token in self.tokens:
                         self.action[str(state)][token] = ('s',self.compute_go(state,token))
+                        # self.action[str(state)][token] = ('s',self.states[self.states.index(self.compute_go(state,token))]) # use index to make sure the state is in the list
         
         # print(self.action)
     
@@ -359,7 +401,21 @@ class Parser():
             for token in self.nonterminals:
                 goto = self.compute_go(state,token)
                 if goto:
-                    self.goto[str(state)][token] = goto
+                    finded = False
+                    for the_state in self.states:
+                        i = 0
+                        for i,item in enumerate(goto):
+                            if item not in the_state:
+                                break
+                        if i == len(goto) - 1:
+                            finded = True
+                            break
+                            
+                    if not finded:
+                        print('ERROR:can\'t find',goto)
+                        return 
+                    self.goto[str(state)][token] = the_state
+    
     
     def parse(self, tokens):
         '''
@@ -367,29 +423,44 @@ class Parser():
         '''
         # Initialize the stack
         stack = []
-        stack.append((self.states[0],'$'))
-    
+        stack.append(self.states[0])
+        parserTree = {'S\'':[]}
         # Parse the tokens
         i = 0
+        print('first')
+        for key in self.first:
+            print(key,':',self.first[key])
+        print('action:')
+        for key in self.action:
+            print(key,':',self.action[key])
+        print('goto:')
+        for key in self.goto:
+            print(key,':',self.goto[key])
         while i < len(tokens):
-            state = stack[-1][0]
             token = tokens[i]
-            if self.action[str(state)][token.type] is None:
-                return None
-            if self.action[str(state)][token.type][0] == 's':
-                stack.append((self.action[str(state)][token.type][1],token))
+            state = stack[-1]
+            if self.action[str(state)][token.type] == None:
+                print('ERROR: unexpected token',token.type,'in state',state)
+                return
+            elif self.action[str(state)][token.type][0] == 's':
+                stack.append(token)
+                stack.append(self.action[str(state)][token.type][1])
                 i += 1
             elif self.action[str(state)][token.type][0] == 'r':
-                rule = self.action[str(state)][token.type][1]
-                for j in range(len(rule)-1):
+                item = self.action[str(state)][token.type][1]
+                for j in range(len(item['rhs']) * 2):
                     stack.pop()
-                state = stack[-1][0]
-                stack.append((self.goto[str(state)][rule[0]],rule))
+                stack.append(item['lhs'])
+                stack.append(self.goto[str(stack[-2])][item['lhs']])
             elif self.action[str(state)][token.type][0] == 'acc':
-                # Return the parse tree
-                return stack[-1][1]
+                return parserTree
             else:
-                raise Exception('Syntax error')
+                print('ERROR: unknown action',self.action[str(state)][token.type])
+                return
+        
+            
+            
+            
             
             
     
@@ -397,7 +468,7 @@ if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
-    parser = Parser('./myParser.g4', Lexer.cpp_tokens)
+    parser = Parser('./myParser.g4', ['DecimalLiteral','','EOF'])
     # parser = Parser('./cppParser.g4', Lexer.cpp_tokens) 
     # Parse the tokens
     print(parser.parse(tokens))
