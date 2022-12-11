@@ -1,32 +1,25 @@
 lexer grammar CPP14Lexer;
 
 IntegerLiteral:
-	DecimalLiteral Integersuffix?
-	| OctalLiteral Integersuffix?
-	| HexadecimalLiteral Integersuffix?
-	| BinaryLiteral Integersuffix?;
+	DecimalLiteral 
+	| OctalLiteral 
+	| HexadecimalLiteral 
+	| BinaryLiteral ;
 
 CharacterLiteral:
-	('u' | 'U' | 'L')? '\'' Cchar+ '\'';
+	'\'' Cchar+ '\'';
 
 FloatingLiteral:
-	Fractionalconstant Exponentpart? Floatingsuffix?
-	| Digitsequence Exponentpart Floatingsuffix?;
+	Fractionalconstant Exponentpart?
+	| Digitsequence Exponentpart;
 
 StringLiteral:
-	Encodingprefix?
     (Rawstring
 	|'"' Schar* '"');
 
 BooleanLiteral: False_ | True_;
 
 PointerLiteral: Nullptr;
-
-UserDefinedLiteral:
-	UserDefinedIntegerLiteral
-	| UserDefinedFloatingLiteral
-	| UserDefinedStringLiteral
-	| UserDefinedCharacterLiteral;
 
 MultiLineMacro:
 	'#' (~[\n]*? '\\' '\r'? '\n')+ ~ [\n]+ -> channel (HIDDEN);
@@ -51,10 +44,6 @@ Case: 'case';
 Catch: 'catch';
 
 Char: 'char';
-
-Char16: 'char16_t';
-
-Char32: 'char32_t';
 
 Class: 'class';
 
@@ -281,12 +270,6 @@ DotStar: '.*';
 
 Ellipsis: '...';
 
-fragment Hexquad:
-	HEXADECIMALDIGIT HEXADECIMALDIGIT HEXADECIMALDIGIT HEXADECIMALDIGIT;
-
-fragment Universalcharactername:
-	'\\u' Hexquad
-	| '\\U' Hexquad Hexquad;
 
 Identifier:
 	/*
@@ -294,7 +277,7 @@ Identifier:
 	 */
 	Identifiernondigit (Identifiernondigit | DIGIT)*;
 
-fragment Identifiernondigit: NONDIGIT | Universalcharactername;
+fragment Identifiernondigit: NONDIGIT;
 
 fragment NONDIGIT: [a-zA-Z_];
 
@@ -318,22 +301,9 @@ fragment HEXADECIMALDIGIT: [0-9a-fA-F];
 
 fragment BINARYDIGIT: [01];
 
-Integersuffix:
-	Unsignedsuffix Longsuffix?
-	| Unsignedsuffix Longlongsuffix?
-	| Longsuffix Unsignedsuffix?
-	| Longlongsuffix Unsignedsuffix?;
-
-fragment Unsignedsuffix: [uU];
-
-fragment Longsuffix: [lL];
-
-fragment Longlongsuffix: 'll' | 'LL';
-
 fragment Cchar:
 	~ ['\\\r\n]
-	| Escapesequence
-	| Universalcharactername;
+	| Escapesequence;
 
 fragment Escapesequence:
 	Simpleescapesequence
@@ -373,32 +343,13 @@ fragment SIGN: [+-];
 
 fragment Digitsequence: DIGIT ('\''? DIGIT)*;
 
-fragment Floatingsuffix: [flFL];
-
-fragment Encodingprefix: 'u8' | 'u' | 'U' | 'L';
 
 fragment Schar:
 	~ ["\\\r\n]
-	| Escapesequence
-	| Universalcharactername;
+	| Escapesequence;
 
 fragment Rawstring: 'R"' (( '\\' ["()] )|~[\r\n (])*? '(' ~[)]*? ')'  (( '\\' ["()]) | ~[\r\n "])*? '"';
 
-UserDefinedIntegerLiteral:
-	DecimalLiteral Udsuffix
-	| OctalLiteral Udsuffix
-	| HexadecimalLiteral Udsuffix
-	| BinaryLiteral Udsuffix;
-
-UserDefinedFloatingLiteral:
-	Fractionalconstant Exponentpart? Udsuffix
-	| Digitsequence Exponentpart Udsuffix;
-
-UserDefinedStringLiteral: StringLiteral Udsuffix;
-
-UserDefinedCharacterLiteral: CharacterLiteral Udsuffix;
-
-fragment Udsuffix: Identifier;
 
 Whitespace: [ \t]+ -> skip;
 
@@ -407,3 +358,20 @@ Newline: ('\r' '\n'? | '\n') -> skip;
 BlockComment: '/*' .*? '*/' -> skip;
 
 LineComment: '//' ~ [\r\n]* -> skip;
+
+/*My Keys */
+Stack:'stack';
+Push:'push';
+Empty:'empty';
+Pop:'pop';
+Top:'top';
+Istream:'istream';
+Ostream:'ostream';
+Cin:'cin';
+Cout:'cout';
+Endl:'endl';
+String:'string';
+Length:'length';
+Vector:'vector';
+Find:'find';
+Push_back:'push_back';

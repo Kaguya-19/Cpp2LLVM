@@ -643,7 +643,7 @@ virtualSpecifier: Override | Final;
  */
 
 pureSpecifier:
-	Assign val = OctalLiteral {if($val.text.compareTo("0")!=0) throw new InputMismatchException(this);
+	Assign val = OctalLiteral {if($val.text.compareTo("0")!=0): raise Exception("Pure specifier must be 0")
 		};
 /*Derived classes*/
 
@@ -693,7 +693,6 @@ operatorFunctionId: Operator theOperator;
 literalOperatorId:
 	Operator (
 		StringLiteral Identifier
-		| UserDefinedStringLiteral
 	);
 /*Templates*/
 
@@ -818,6 +817,5 @@ literal:
 	| FloatingLiteral
 	| StringLiteral
 	| BooleanLiteral
-	| PointerLiteral
-	| UserDefinedLiteral;
+	| PointerLiteral;
 	
