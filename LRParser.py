@@ -195,8 +195,8 @@ class Parser():
         
         # Initialize the first sets
         for token in self.tokens:
-            self.first[token] = set()
-        
+            self.first[token] = set([token])
+                
         # Compute the first sets
         changed = True
         while changed:
@@ -204,6 +204,8 @@ class Parser():
             for lhs, _ in self.grammar.items():
                 if compute_first(self,lhs):
                     changed = True
+        
+        print(self.first)
                     
     def compute_follow_total(self):       
         '''
@@ -256,6 +258,8 @@ class Parser():
         
         # Compute the follow sets
         compute_follow(self,self.start,self.grammar[self.start])
+        
+        # print(self.follow)
     
     def compute_closure(self, I):
         '''
@@ -307,6 +311,8 @@ class Parser():
                     if go and go not in self.states:
                         self.states.append(go)
                         changed = True
+                        
+        # print(self.states)
                                
     def build_action(self):
         '''
@@ -334,6 +340,8 @@ class Parser():
                     token = item[0][item[1]]
                     if token in self.tokens:
                         self.action[str(state)][token] = ('s',self.compute_go(state,token))
+        
+        # print(self.action)
     
     def build_goto(self):
         '''
@@ -378,6 +386,7 @@ class Parser():
                 state = stack[-1][0]
                 stack.append((self.goto[str(state)][rule[0]],rule))
             elif self.action[str(state)][token.type][0] == 'acc':
+                # Return the parse tree
                 return stack[-1][1]
             else:
                 raise Exception('Syntax error')

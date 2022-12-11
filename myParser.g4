@@ -3,16 +3,16 @@
 translationUnit: literal;
 
 literal:
-	IntegerLiteral
-	| CharacterLiteral
-	| FloatingLiteral
-	| StringLiteral
-	| BooleanLiteral
-	| Nullptr;
+	IntegerLiteral;
+	// | CharacterLiteral
+	// | FloatingLiteral
+	// | StringLiteral
+	// | BooleanLiteral
+	// | Nullptr;
 	// | UserDefinedLiteral;
 
 IntegerLiteral:
-	DecimalLiteral
-	| OctalLiteral
-	| HexadecimalLiteral
-	| BinaryLiteral;
+	DecimalLiteral?;
+	// | OctalLiteral
+	// | HexadecimalLiteral
+	// | BinaryLiteral;

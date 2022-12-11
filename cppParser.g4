@@ -36,8 +36,8 @@ idExpression: unqualifiedId | qualifiedId;
 unqualifiedId:
 	Identifier
 	| conversionFunctionId
-	| literalOperatorId;
-	// | templateId;
+	| literalOperatorId
+	| templateId;
 
 qualifiedId: nestedNameSpecifier Template? unqualifiedId;
 
@@ -45,14 +45,14 @@ nestedNameSpecifier:
 	theTypeName? Doublecolon
 	| nestedNameSpecifier (
 		Identifier
-		// | Template? simpleTemplateId
+		| Template? simpleTemplateId
 	) Doublecolon;
 
 postfixExpression:
 	primaryExpression
 	| postfixExpression LeftBracket (expression | bracedInitList) RightBracket
 	| postfixExpression LeftParen expressionList? RightParen
-	| (simpleTypeSpecifier ) (
+	| (simpleTypeSpecifier | typeNameSpecifier ) (
 		LeftParen expressionList? RightParen
 		| bracedInitList
 	)
@@ -77,8 +77,8 @@ typeIdOfTheTypeId: Typeid;
 expressionList: initializerList;
 
 pseudoDestructorName:
-	nestedNameSpecifier? (theTypeName Doublecolon)? Tilde theTypeName;
-	// | nestedNameSpecifier Template simpleTemplateId Doublecolon Tilde theTypeName;
+	nestedNameSpecifier? (theTypeName Doublecolon)? Tilde theTypeName
+	| nestedNameSpecifier Template simpleTemplateId Doublecolon Tilde theTypeName;
 
 unaryExpression:
 	postfixExpression
@@ -248,7 +248,7 @@ declarationseq: declaration+;
 declaration:
 	blockDeclaration
 	| functionDefinition
-	// | templateDeclaration
+	| templateDeclaration
 	| emptyDeclaration;
 
 blockDeclaration:
@@ -280,7 +280,7 @@ typeSpecifier:
 
 trailingTypeSpecifier:
 	simpleTypeSpecifier
-	// | typeNameSpecifier
+	| typeNameSpecifier
 	| cvQualifier;
 
 typeSpecifierSeq: typeSpecifier+;
@@ -298,7 +298,7 @@ simpleTypeSignednessModifier:
 
 simpleTypeSpecifier:
 	nestedNameSpecifier? theTypeName
-	// | nestedNameSpecifier Template simpleTemplateId
+	| nestedNameSpecifier Template simpleTemplateId
 	| simpleTypeSignednessModifier
 	| simpleTypeSignednessModifier? simpleTypeLengthModifier+
 	| simpleTypeSignednessModifier? Char
@@ -310,7 +310,7 @@ simpleTypeSpecifier:
 	| Auto;
 
 theTypeName:
-    typedefName;
+    typedefName | simpleTemplateId;
 
 /*Declarators*/
 
@@ -448,6 +448,42 @@ balancedtoken:
 
 literalOperatorId:
 	Operator StringLiteral Identifier;
+
+/*Templates*/
+
+templateDeclaration:
+	Template Less templateparameterList Greater declaration;
+
+templateparameterList:
+	templateParameter (Comma templateParameter)*;
+
+templateParameter: typeParameter | parameterDeclaration;
+
+typeParameter:
+	(
+		(Template Less templateparameterList Greater)? Class
+		| Typename_
+	) ((Ellipsis? Identifier?) | (Identifier? Assign theTypeId));
+
+simpleTemplateId:
+	templateName Less templateArgumentList? Greater;
+
+templateId:
+	simpleTemplateId
+	| literalOperatorId Less templateArgumentList? Greater;
+
+templateName: Identifier;
+
+templateArgumentList:
+	templateArgument Ellipsis? (Comma templateArgument Ellipsis?)*;
+
+templateArgument: theTypeId | constantExpression | idExpression;
+
+typeNameSpecifier:
+	Typename_ nestedNameSpecifier (
+		Identifier
+		| Template? simpleTemplateId
+	);
 
 /*Lexer*/
 
