@@ -1,18 +1,19 @@
 #  a LR(1) parser for C++
 from g4Lex import G4Lexer
 from lex import Lexer, Token 
-import sys
+import sys,json
 
 class Parser():
     '''
     A LR(1) parser for C++
     '''
-    def __init__(self, grammar_file, tokens=[]):
+    def __init__(self, grammar_file, tokens=[],start='translationUnit'):
         self.grammar = self.read_grammar_g4(grammar_file)
         self.tokens = tokens
         self.nonterminals = list(self.grammar.keys()) 
         self.action = {}
         self.goto = {}
+        self.start = start
         self.build_table()
         
     def read_grammar_g4(self, filename):
@@ -79,10 +80,10 @@ class Parser():
                     elif isinstance(last, str):
                         last = [last]
                     if token.type == 'PLUS':
-                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+']]
+                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
                         rhs[-1] = str(last)+'_+'
                     elif token.type == 'STAR':
-                        self.grammar[str(last)+'_*'] = [[str(last)+'_*'],last, ['']]
+                        self.grammar[str(last)+'_*'] = [[str(last)+'_*' ,*last], ['']]
                         rhs[-1] = str(last)+'_*'
                     elif token.type == 'QUESTION':
                         self.grammar[str(last)+'_?'] = [last, ['']]
@@ -118,10 +119,10 @@ class Parser():
                     elif isinstance(last, str):
                         last = [last]
                     if token.type == 'PLUS':
-                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+']]
+                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
                         parenList[parenNum][-1] = str(last)+'_+'
                     elif token.type == 'STAR':
-                        self.grammar[str(last)+'_*'] = [[str(last)+'_*'],last, ['']]
+                        self.grammar[str(last)+'_*'] = [[str(last)+'_*',*last], ['']]
                         parenList[parenNum][-1] = str(last)+'_*'
                     elif token.type == 'QUESTION':
                         self.grammar[str(last)+'_?'] = [last, ['']]
@@ -136,6 +137,55 @@ class Parser():
                 else:
                     read_error(token.value)
             
+    def delete_epsilon(self):
+        '''
+        Delete the epsilon rules in the grammar.
+        '''
+        # compute the nullable set
+        nullable = {}
+        for key in self.grammar:
+            nullable[key] = False
+        for key in self.tokens:
+            nullable[key] = False
+        nullable[''] = True
+        changed = True
+        while changed:
+            changed = False
+            for key in self.grammar:
+                for rule in self.grammar[key]:
+                    if all([nullable[x] for x in rule]):
+                        if not nullable[key]:
+                            changed = True
+                            nullable[key] = True
+                            
+        # delete the epsilon rules
+        trash = []
+        for key in self.grammar:
+            self.grammar[key] = [x for x in self.grammar[key] if x != ['']]
+            if self.grammar[key] == []:
+                trash.append(key)
+        for key in trash:
+            del self.grammar[key]
+        for key in self.grammar:
+            self.grammar[key] = [x for x in self.grammar[key] if x not in trash]
+                
+        # add the new rules with the nullable 
+        for key in self.grammar:
+            for rule in self.grammar[key]:
+                if any([nullable[x] for x in rule]):
+                    # get the index of the nullables
+                    nullables = [i for i in range(len(rule)) if nullable[rule[i]]]
+                    for i in range(2**len(nullables)):
+                        new_rule = []
+                        for j in range(len(nullables)):
+                            if i & (1 << j): # if the jth bit is 1
+                                new_rule.append(rule[j])
+                        if new_rule and new_rule not in self.grammar[key]:
+                            self.grammar[key].append(new_rule)
+        
+                   
+                                              
+
         
     def build_table(self):
         '''
@@ -144,10 +194,12 @@ class Parser():
         # Build the first and follow sets
         self.first = {}
         # self.follow = {}
-        self.start = 'translationUnit'
+
         
         # augment the grammar
         self.grammar['S\''] = [[self.start]]
+        
+        self.delete_epsilon()
         
         # compute the first and follow sets
         self.compute_first_total()
@@ -282,7 +334,7 @@ class Parser():
                         bs = set()
                         j = item['dot'] + 1
                         while j < len(item['rhs']):
-                            bs += self.first[item['rhs'][j]] - set([''])
+                            bs |= self.first[item['rhs'][j]] - set([''])
                             if '' not in self.first[item['rhs'][j]]:
                                 break
                             j += 1
@@ -292,7 +344,7 @@ class Parser():
                             for b in bs:
                                 if {'lhs':token,'rhs':rule,'lookahead':b,'dot':0} not in J:
                                     J.append({'lhs':token,'rhs':rule,'lookahead':b,'dot':0})
-                                    changed = True
+                                    changed = True            
 
         return J
     
@@ -335,9 +387,7 @@ class Parser():
                         self.states.append(go)
                         changed = True
                         
-        print('STATES:')
-        for state in self.states:
-            print(state)
+
                                
     def build_action(self):
         '''
@@ -401,16 +451,19 @@ class Parser():
             for token in self.nonterminals:
                 goto = self.compute_go(state,token)
                 if goto:
+                    # print('goto:',goto)
                     finded = False
                     for the_state in self.states:
                         i = 0
+                        findedGoto = True
                         for i,item in enumerate(goto):
                             if item not in the_state:
+                                findedGoto = False
                                 break
-                        if i == len(goto) - 1:
+                        if i == len(goto) - 1 and findedGoto:
                             finded = True
                             break
-                            
+                    # print('the_state:',the_state)
                     if not finded:
                         print('ERROR:can\'t find',goto)
                         return 
@@ -424,18 +477,19 @@ class Parser():
         # Initialize the stack
         stack = []
         stack.append(self.states[0])
-        parserTree = {'S\'':[]}
+        parserTree = ParserTree()
         # Parse the tokens
         i = 0
-        print('first')
-        for key in self.first:
-            print(key,':',self.first[key])
-        print('action:')
-        for key in self.action:
-            print(key,':',self.action[key])
-        print('goto:')
-        for key in self.goto:
-            print(key,':',self.goto[key])
+        # print('STATES:')
+        # for state in self.states:
+        #     print(state)
+        # print('action:')
+        # for key in self.action:
+        #     print(key,':',self.action[key])
+        # print('goto:')
+        # for key in self.goto:
+        #     print(key,':',self.goto[key])
+        # print(tokens)
         while i < len(tokens):
             token = tokens[i]
             state = stack[-1]
@@ -443,32 +497,78 @@ class Parser():
                 print('ERROR: unexpected token',token.type,'in state',state)
                 return
             elif self.action[str(state)][token.type][0] == 's':
-                stack.append(token)
+                parserTree.add_child(token.type,token.value)
                 stack.append(self.action[str(state)][token.type][1])
                 i += 1
+                print('shift',token.type)
             elif self.action[str(state)][token.type][0] == 'r':
                 item = self.action[str(state)][token.type][1]
-                for j in range(len(item['rhs']) * 2):
+                for _ in enumerate(item['rhs']):
                     stack.pop()
-                stack.append(item['lhs'])
-                stack.append(self.goto[str(stack[-2])][item['lhs']])
+                parserTree.add_parent(item['lhs'])
+                stack.append(self.goto[str(stack[-1])][item['lhs']])
+                # print('reduce',item['lhs'],'->',item['rhs'])
             elif self.action[str(state)][token.type][0] == 'acc':
                 return parserTree
             else:
                 print('ERROR: unknown action',self.action[str(state)][token.type])
                 return
+            # print('STACK',stack)
+        print('ERROR: unexpected EOF')
+        return
+    
+class ParserTree:
+    class Node:
+        def __init__(self, type, children=None, value=None, parent=None):
+            self.type = type
+            self.children = children
+            self.value = value
+            self.parent = parent
         
-            
-            
-            
-            
-            
+        def __dict__(self):
+            dic = {'type':self.type}
+            if self.value:
+                dic['value'] = self.value
+            if self.children:
+                dic['children'] = []
+                for child in self.children:
+                    dic['children'].append(child.__dict__())
+            return dic
+    
+    def __init__(self):
+        self.root = self.Node('S\'')
+        self.last = self.root
+        self.needGet = 0        
+        
+    def __dict__(self):
+        return self.root.__dict__()
+    
+    def __str__(self):
+        return json.dumps(self.__dict__(),indent=1)
+    
+    def add_child(self, child_type, child_value=None):
+        child = self.Node(child_type, value=child_value, parent=self.last)
+        if self.last.children == None:
+            self.last.children = []
+        self.last.children.append(child)
+        self.last = child
+        
+    def add_parent(self, parent_type):
+        parent = self.Node(parent_type, children=[self.last], parent=self.last.parent)
+        self.last.parent.children[-1] = parent
+        self.last.parent = parent
+        self.last = parent
+        
+        
+        
+        
+        
     
 if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
-    parser = Parser('./myParser.g4', ['DecimalLiteral','','EOF'])
+    parser = Parser('./myParser.g4', ['DecimalLiteral','EOF','CharacterLiteral'],start='s')
     # parser = Parser('./cppParser.g4', Lexer.cpp_tokens) 
     # Parse the tokens
     print(parser.parse(tokens))

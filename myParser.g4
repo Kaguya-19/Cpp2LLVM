@@ -1,6 +1,9 @@
 // functionBody:
     
-translationUnit: DecimalLiteral;
+s:  a | b;
+a: DecimalLiteral*;
+b: CharacterLiteral;
+
 
 // literal:
 // 	IntegerLiteral;
