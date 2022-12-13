@@ -1,8 +1,8 @@
 // functionBody:
     
-s:  a | b;
-a: DecimalLiteral*;
-b: CharacterLiteral;
+s:  a  DecimalLiteral;
+a: DecimalLiteral? DecimalLiteral;
+// b: CharacterLiteral;
 
 
 // literal:

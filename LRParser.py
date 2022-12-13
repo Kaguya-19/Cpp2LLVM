@@ -547,15 +547,19 @@ class ParserTree:
         return json.dumps(self.__dict__(),indent=1)
     
     def add_child(self, child_type, child_value=None):
-        child = self.Node(child_type, value=child_value, parent=self.last)
-        if self.last.children == None:
-            self.last.children = []
-        self.last.children.append(child)
+        if self.last.parent:  
+            sl = self.last.parent 
+        else: 
+            sl = self.last
+        child = self.Node(child_type, value=child_value, parent=sl)
+        if sl.children == None:
+            sl.children = []
+        sl.children.append(child)
         self.last = child
         
     def add_parent(self, parent_type):
-        parent = self.Node(parent_type, children=[self.last], parent=self.last.parent)
-        self.last.parent.children[-1] = parent
+        parent = self.Node(parent_type, children=self.last.parent.children, parent=self.last.parent)
+        self.last.parent.children= [parent]
         self.last.parent = parent
         self.last = parent
         
@@ -568,7 +572,7 @@ if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
-    parser = Parser('./myParser.g4', ['DecimalLiteral','EOF','CharacterLiteral'],start='s')
+    parser = Parser('./myParser.g4', ['DecimalLiteral','CharacterLiteral'],start='s')
     # parser = Parser('./cppParser.g4', Lexer.cpp_tokens) 
     # Parse the tokens
     print(parser.parse(tokens))
