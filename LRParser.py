@@ -199,7 +199,7 @@ class Parser():
         # augment the grammar
         self.grammar['S\''] = [[self.start]]
         
-        self.delete_epsilon()
+        # self.delete_epsilon()
         
         # compute the first and follow sets
         self.compute_first_total()
@@ -220,7 +220,7 @@ class Parser():
             # if isinstance(lhs, list):
             #     print(lhs)
             
-            if lhs in self.first:
+            if lhs in self.first or lhs == '':
                 return False
             self.first[lhs] = set()
             rhs = self.grammar[lhs]
@@ -231,6 +231,8 @@ class Parser():
                             self.first[lhs].add(token)
                             changed = True
                     else:
+                        if token == '':
+                            continue
                         if compute_first(self,token):
                             changed = True
 
@@ -329,6 +331,8 @@ class Parser():
             for item in J:
                 if item['dot'] < len(item['rhs']):
                     token = item['rhs'][item['dot']]
+                    if token == '':
+                        continue
                     if token not in self.tokens:
                         # compute the first(\beta a) set
                         bs = set()
@@ -354,6 +358,8 @@ class Parser():
         '''
         J = []
         for item in I:
+            if item['rhs'] == ['']:
+                continue
             if item['dot'] < len(item['rhs']):
                 token = item['rhs'][item['dot']]
                 if token == X:
@@ -407,7 +413,7 @@ class Parser():
         
         # Build the action table
         
-        for i,state in enumerate(self.states):
+        for _,state in enumerate(self.states):
             for item in state:
                 # handle epsilon
                 # if item['rhs'] == ['']:
@@ -418,15 +424,7 @@ class Parser():
                     if item['lhs'] == 'S\'' and item['lookahead'] == 'EOF' and item['rhs'] == [self.start]:
                         self.action[str(state)]['EOF'] = ('acc',None)
                     else:
-                        finded = False
-                        for the_state in self.states:
-                            if item in the_state:
-                                finded = True
-                                break
-                        if not finded:
-                            print('ERROR: item not in states')
-                            return  
-                        self.action[str(state)][item['lookahead']] = ('r',item)
+                        self.action[str(state)][item['lookahead']] = ('r',{'lhs':item['lhs'],'rhs':item['rhs']})
                 else:
                     token = item['rhs'][item['dot']]
                     if token in self.tokens:
@@ -480,16 +478,19 @@ class Parser():
         parserTree = ParserTree()
         # Parse the tokens
         i = 0
-        # print('STATES:')
-        # for state in self.states:
-        #     print(state)
-        # print('action:')
-        # for key in self.action:
-        #     print(key,':',self.action[key])
-        # print('goto:')
-        # for key in self.goto:
-        #     print(key,':',self.goto[key])
-        # print(tokens)
+        print('Grammar:')
+        for key in self.grammar:
+            print(key,':',self.grammar[key])
+        print('STATES:')
+        for state in self.states:
+            print(state)
+        print('action:')
+        for key in self.action:
+            print(key,':',self.action[key])
+        print('goto:')
+        for key in self.goto:
+            print(key,':',self.goto[key])
+        print(tokens)
         while i < len(tokens):
             token = tokens[i]
             state = stack[-1]
@@ -507,7 +508,7 @@ class Parser():
                     stack.pop()
                 parserTree.add_parent(item['lhs'])
                 stack.append(self.goto[str(stack[-1])][item['lhs']])
-                # print('reduce',item['lhs'],'->',item['rhs'])
+                print('reduce',item['lhs'],'->',item['rhs'])
             elif self.action[str(state)][token.type][0] == 'acc':
                 return parserTree
             else:
