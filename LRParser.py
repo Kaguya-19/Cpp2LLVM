@@ -2,6 +2,7 @@
 from g4Lex import G4Lexer
 from lex import Lexer, Token 
 import sys,json
+# from treelib import Tree, Node
 
 class Parser():
     '''
@@ -102,14 +103,14 @@ class Parser():
                         orList[parenNum].append(parenList[parenNum])
                         self.grammar[str(orList[parenNum])+'_or'] = orList[parenNum]
                         parenList[parenNum] = [str(orList[parenNum])+'_or']
-                    parenNum -= 1
-                    if parenNum == 0:
+                    self.grammar[str(parenList[parenNum])+'_paren'] = [parenList[parenNum]]
+                    if parenNum == 1:
                         state = 'rhs'
-                        for value in parenList[1]:
-                            rhs.append(value)
+                        rhs.append(str(parenList[parenNum])+'_paren')
+                        
                     else:
-                        for value in parenList[parenNum+1]:
-                            parenList[parenNum].append(value)
+                        parenList[parenNum-1].append(str(parenList[parenNum])+'_paren')
+                    parenNum -= 1
                 elif token.type == 'Identifier':
                     parenList[parenNum].append(token.value)
                 elif token.type == 'PLUS' or token.type == 'STAR' or token.type == 'QUESTION':
@@ -136,6 +137,8 @@ class Parser():
                     parenList[parenNum] = []
                 else:
                     read_error(token.value)
+        
+            
             
     def delete_epsilon(self):
         '''
@@ -224,6 +227,7 @@ class Parser():
                 return False
             self.first[lhs] = set()
             rhs = self.grammar[lhs]
+            
             for rule in rhs:
                 for i,token in enumerate(rule):
                     if token in self.tokens:
@@ -406,8 +410,8 @@ class Parser():
             self.action[str(state)] = {}
             for token in self.tokens:
                 self.action[str(state)][token] = None
-            for token in self.nonterminals:
-                self.action[str(state)][token] = None
+            # for token in self.nonterminals:
+            #     self.action[str(state)][token] = None
             self.action[str(state)]['EOF'] = None
             self.action[str(state)]['S\''] = None
         
@@ -476,55 +480,72 @@ class Parser():
         stack = []
         stack.append(self.states[0])
         parserTree = ParserTree()
+        # parserTree = Tree()
+        # root_node = Node(tag=('S\'','S\''))
+        # parserTree.create_node(root_node)
+        # last_node = root_node.identifier
         # Parse the tokens
         i = 0
-        print('Grammar:')
-        for key in self.grammar:
-            print(key,':',self.grammar[key])
-        print('STATES:')
-        for state in self.states:
-            print(state)
-        print('action:')
-        for key in self.action:
-            print(key,':',self.action[key])
-        print('goto:')
-        for key in self.goto:
-            print(key,':',self.goto[key])
-        print(tokens)
+        # print('Grammar:')
+        # for key in self.grammar:
+        #     print(key,':',self.grammar[key])
+        # print('STATES:')
+        # for state in self.states:
+        #     print(state)
+        # print('action:')
+        # for key in self.action:
+        #     print(key,':',self.action[key])
+        # print('goto:')
+        # for key in self.goto:
+        #     print(key,':',self.goto[key])
+        # print(tokens)
         while i < len(tokens):
             token = tokens[i]
             state = stack[-1]
             if self.action[str(state)][token.type] == None:
-                print('ERROR: unexpected token',token.type,'in state',state)
-                return
+                finded = False
+                for state_ in state:
+                    if state_['rhs'] == [''] and state_['lookahead'] == token.type: # handle epsilon
+                        finded = True
+                        stack.append(self.goto[str(state)][state_['lhs']])
+                        parserTree.add_parent(state_['lhs'])
+                        break
+                if not finded:
+                    print('ERROR: unexpected token',token.type,'in state',state)
+                    return
             elif self.action[str(state)][token.type][0] == 's':
                 parserTree.add_child(token.type,token.value)
                 stack.append(self.action[str(state)][token.type][1])
+                print(token.type,token.value)
                 i += 1
-                print('shift',token.type)
+                # print('shift',token.type)
             elif self.action[str(state)][token.type][0] == 'r':
                 item = self.action[str(state)][token.type][1]
-                for _ in enumerate(item['rhs']):
+                parent = parserTree.add_parent(item['lhs'])   
+                for _,r in enumerate(item['rhs'][::-1]):
                     stack.pop()
-                parserTree.add_parent(item['lhs'])
+                    parserTree.add_child_to_parent(parent,r)
+                parserTree.end_add(parent)
+                
                 stack.append(self.goto[str(stack[-1])][item['lhs']])
                 print('reduce',item['lhs'],'->',item['rhs'])
             elif self.action[str(state)][token.type][0] == 'acc':
+                parserTree.add_parent('S\'')
+                parserTree.end()
                 return parserTree
             else:
                 print('ERROR: unknown action',self.action[str(state)][token.type])
                 return
             # print('STACK',stack)
         print('ERROR: unexpected EOF')
-        return
-    
+        return       
+
 class ParserTree:
     class Node:
         def __init__(self, type, children=None, value=None, parent=None):
             self.type = type
             self.children = children
             self.value = value
-            self.parent = parent
         
         def __dict__(self):
             dic = {'type':self.type}
@@ -535,11 +556,12 @@ class ParserTree:
                 for child in self.children:
                     dic['children'].append(child.__dict__())
             return dic
+        
+        def __str__(self):
+            return json.dumps(self.__dict__(),indent=1)
     
     def __init__(self):
-        self.root = self.Node('S\'')
-        self.last = self.root
-        self.needGet = 0        
+        self.stack = []
         
     def __dict__(self):
         return self.root.__dict__()
@@ -547,33 +569,35 @@ class ParserTree:
     def __str__(self):
         return json.dumps(self.__dict__(),indent=1)
     
-    def add_child(self, child_type, child_value=None):
-        if self.last.parent:  
-            sl = self.last.parent 
-        else: 
-            sl = self.last
-        child = self.Node(child_type, value=child_value, parent=sl)
-        if sl.children == None:
-            sl.children = []
-        sl.children.append(child)
-        self.last = child
+    def add_child(self, child_type, child_value=None):        
+        child = self.Node(child_type, value=child_value)
+        self.stack.append(child)
         
     def add_parent(self, parent_type):
-        parent = self.Node(parent_type, children=self.last.parent.children, parent=self.last.parent)
-        self.last.parent.children= [parent]
-        self.last.parent = parent
-        self.last = parent
+        parent = self.Node(parent_type, children=[])
+        return parent
+        
+    def add_child_to_parent(self, parent,type):
+        if self.stack:
+            if self.stack[-1].type == type:
+                parent.children.append(self.stack.pop())
         
         
         
+    def end_add(self, parent):
+        parent.children.reverse()
+        self.stack.append(parent)
+        # print(parent)
+        
+    def end(self):
+        self.root = self.stack.pop()
         
         
-    
 if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
-    parser = Parser('./myParser.g4', ['DecimalLiteral','CharacterLiteral'],start='s')
-    # parser = Parser('./cppParser.g4', Lexer.cpp_tokens) 
+    # parser = Parser('./myParser.g4', ['DecimalLiteral','CharacterLiteral','EOF'],start='s')
+    parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
     # Parse the tokens
     print(parser.parse(tokens))

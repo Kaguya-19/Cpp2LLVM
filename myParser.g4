@@ -1,7 +1,7 @@
 // functionBody:
     
-s:  a;
-a: DecimalLiteral*;
+s:  (CharacterLiteral DecimalLiteral)?;
+// a: DecimalLiteral? CharacterLiteral;
 // b: CharacterLiteral;
 
 
