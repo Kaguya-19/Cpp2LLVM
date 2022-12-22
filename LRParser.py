@@ -538,7 +538,19 @@ class Parser():
                 return
             # print('STACK',stack)
         print('ERROR: unexpected EOF')
-        return       
+        return
+
+    def save_action(self):
+        with open('action.json','w') as f:
+            json.dump(self.action,f,indent=1)
+    def save_goto(self):
+        with open('goto.json','w') as f:
+            json.dump(self.goto,f,indent=1)
+    def save_state(self):
+        with open('state.json','w') as f:
+            for state in self.states:
+                json.dump(state,f,indent=1)
+                f.write('\r')
 
 class ParserTree:
     class Node:
@@ -599,5 +611,8 @@ if __name__ == '__main__':
     tokens = lexer.scan()
     # parser = Parser('./myParser.g4', ['DecimalLiteral','CharacterLiteral','EOF'],start='s')
     parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
+    parser.save_state()
+    parser.save_action()
+    parser.save_goto()
     # Parse the tokens
     print(parser.parse(tokens))

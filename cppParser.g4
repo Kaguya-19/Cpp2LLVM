@@ -22,7 +22,7 @@
 
 /*Basic concepts*/
 
-translationUnit: declarationseq? EOF;
+translationUnit: declarationseq?;
 /*Expressions*/
 
 primaryExpression:
