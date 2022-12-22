@@ -26,7 +26,8 @@ class Lexer():
                 'private': 'Private', 'register': 'Register', 'reinterpret_cast': 'Reinterpret_cast', 'return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'static': 'Static', 'static_assert': 'Static_assert', 'static_cast': 'Static_cast', 'struct': 'Struct', 'switch': 'Switch', 'template': 'Template', 'this': 'This', 'thread_local': 'Thread_local', 'throw': 'Throw', 'true': 'BooleanLiteral', 'try': 'Try', 'typedef': 'Typedef', 'typeid': 'Typeid', 'typename': 'Typename', 'union': 'Union', 'unsigned': 'Unsigned', 'using': 'Using', 'virtual': 'Virtual', 'void': 'Void', 'volatile': 'Volatile', 'wchar_t': 'Wchar_t', 'while': 'While' }
     my_key_dict = {'stack':'Stack','push':'Push','empty':'Empty','pop':'Pop','top':'Top',
                    'istream':'Istream','ostream':'Ostream','cin':'Cin','cout':'Cout','endl':'Endl',
-                   'string':'String','length':'Length','vector':'Vector','find':'Find','push_back':'Push_back'} #将系统库函数定义为关键字
+                   'string':'String','length':'Length','vector':'Vector','find':'Find','push_back':'Push_back',
+                   'strlen':'Strlen','atoi':'Atoi','printf':'Printf','scanf':'Scanf','gets':'Gets'} #将系统库函数定义为关键字
     key_dict.update(my_key_dict)
     for value in key_dict.values():
         cpp_tokens.append(value)

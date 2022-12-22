@@ -551,6 +551,19 @@ class Parser():
             for state in self.states:
                 json.dump(state,f,indent=1)
                 f.write('\r')
+                
+    def load_action(self):
+        with open('action.json','r') as f:
+            self.action = json.load(f)
+    
+    def load_goto(self):
+        with open('goto.json','r') as f:
+            self.goto = json.load(f)
+            
+    def load_state(self):
+        with open('state.json','r') as f:
+            for line in f:
+                self.states.append(json.loads(line))
 
 class ParserTree:
     class Node:
@@ -558,6 +571,7 @@ class ParserTree:
             self.type = type
             self.children = children
             self.value = value
+            self.current_node = None
         
         def __dict__(self):
             dic = {'type':self.type}
@@ -603,14 +617,25 @@ class ParserTree:
         
     def end(self):
         self.root = self.stack.pop()
+        self.current_node = self.root
+        
+        
+    def getChild(self, index):
+        return self.current_node.children[index]
+    
+    def getCurrentNode(self):
+        return self.current_node
+    
+    def getChildCount(self):
+        return len(self.current_node.children)
         
         
 if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
-    # parser = Parser('./myParser.g4', ['DecimalLiteral','CharacterLiteral','EOF'],start='s')
-    parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
+    parser = Parser('./myParser.g4', Lexer.cpp_tokens,start='translationUnit')
+    # parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
     parser.save_state()
     parser.save_action()
     parser.save_goto()
