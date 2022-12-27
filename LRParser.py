@@ -84,7 +84,9 @@ class Parser():
                         self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
                         rhs[-1] = str(last)+'_+'
                     elif token.type == 'STAR':
-                        self.grammar[str(last)+'_*'] = [[str(last)+'_*' ,*last], ['']]
+                        # STAR = (+)?
+                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
+                        self.grammar[str(last)+'_*'] = [[str(last)+'_+'], ['']]
                         rhs[-1] = str(last)+'_*'
                     elif token.type == 'QUESTION':
                         self.grammar[str(last)+'_?'] = [last, ['']]
@@ -123,7 +125,8 @@ class Parser():
                         self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
                         parenList[parenNum][-1] = str(last)+'_+'
                     elif token.type == 'STAR':
-                        self.grammar[str(last)+'_*'] = [[str(last)+'_*',*last], ['']]
+                        self.grammar[str(last)+'_+'] = [last,[str(last)+'_+', *last]]
+                        self.grammar[str(last)+'_*'] = [[str(last)+'_+'], ['']]
                         parenList[parenNum][-1] = str(last)+'_*'
                     elif token.type == 'QUESTION':
                         self.grammar[str(last)+'_?'] = [last, ['']]
@@ -549,7 +552,7 @@ class Parser():
     def save_state(self):
         with open('state.json','w') as f:
             for state in self.states:
-                json.dump(state,f,indent=1)
+                json.dump({'state':state},f,indent=0)
                 f.write('\r')
                 
     def load_action(self):
@@ -562,8 +565,9 @@ class Parser():
             
     def load_state(self):
         with open('state.json','r') as f:
+            self.states = []
             for line in f:
-                self.states.append(json.loads(line))
+                self.states.append(json.loads(line)['state'])
 
 class ParserTree:
     class Node:
@@ -595,7 +599,7 @@ class ParserTree:
     def __str__(self):
         return json.dumps(self.__dict__(),indent=1)
     
-    def add_child(self, child_type, child_value=None):        
+    def add_child(self, child_type, child_value=None):     
         child = self.Node(child_type, value=child_value)
         self.stack.append(child)
         
@@ -637,7 +641,7 @@ if __name__ == '__main__':
     parser = Parser('./myParser.g4', Lexer.cpp_tokens,start='translationUnit')
     # parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
     parser.save_state()
-    parser.save_action()
-    parser.save_goto()
+    # parser.save_action()
+    # parser.save_goto()
     # Parse the tokens
     print(parser.parse(tokens))

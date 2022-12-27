@@ -1,107 +1,80 @@
-translationUnit :mFunction;
-
-//结构体
-mStructDef : mStruct  LeftBrace (structParam)+  RightBrace Semi;
-
-//结构体中参数
-structParam : (mType|mStruct) (Identifier|mArray) ( Comma (Identifier|mArray))*  Semi;
-
-//函数
-mFunction : (mType|Void|mStruct) Identifier  LeftParen  params  RightParen   LeftBrace funcBody  RightBrace;
-
-//函数参数
-params : (param ( Comma param)*)?;
-param : mType Identifier;
-
-//函数体
-funcBody : body returnBlock;
-
-//语句块/函数快
-body : (block | func Semi)*;
-
-//语句块
-block : initialBlock | arrayInitBlock | structInitBlock | assignBlock | ifBlocks | whileBlock | forBlock | returnBlock;
-
-//初始化语句
-initialBlock : (mType) Identifier ( Assign  expr)? ( Comma Identifier ( Assign  expr)?)*  Semi;
-arrayInitBlock : mType Identifier  LeftBracket  IntgerLiteral  RightBracket  Semi; 
-structInitBlock : mStruct (Identifier|mArray) Semi;
+translationUnit :(InitialBlock|ArrayInitBlock|FunctionDefine)*;
 
 
-//赋值语句
-assignBlock : ((arrayItem|Identifier|structMember)  Assign )+  expr  Semi;
+FunctionDefine : TypeDef Identifier  LeftParen  Params  RightParen  LeftBrace FuncBody  RightBrace;
 
 
-//if 语句
-ifBlocks : ifBlock (elifBlock)* (elseBlock)?;
-ifBlock :  If   LeftParen condition RightParen   LeftBrace body  RightBrace;
-elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace body  RightBrace;
-elseBlock :  Else   LeftBrace body  RightBrace;
+Params : (Param  ( Comma Param )*)?;
+Param  : TypeDef Identifier;
 
-condition :  expr;
 
-//while 语句
-whileBlock :  While   LeftParen  condition  RightParen   LeftBrace body  RightBrace;
+FuncBody : Body returnBlock;
 
-//for 语句
-forBlock :  For   LeftParen  for1Block   Semi condition  Semi for3Block  RightParen  ( LeftBrace body  RightBrace| Semi);
-for1Block :  Identifier  Assign  expr ( Comma for1Block)?|;
-for3Block : Identifier  Assign  expr ( Comma for3Block)?|;
+Body : (Blocks | FuncRef Semi)*;
 
-//return 语句
-returnBlock : Return (IntgerLiteral|Identifier)?  Semi;
+Blocks : InitialBlock | ArrayInitBlock | AssignBlock | ifBlocks| forBlock | returnBlock;
 
-expr
-    :  LeftParen  expr  RightParen                
-    |  Not expr                  
-    | expr  (Star | Div | Mod) expr    
-    | expr  (Plus |  Minus ) expr   
-    | expr  ( Equal  | NotEqual | Less | LessEqual | Greater | GreaterEqual) expr 
-    | expr AndAnd expr             
-    | expr OrOr expr             
-    | arrayItem                  
-    | structMember              
-    | (  Minus )? IntgerLiteral                                   
-    | (  Minus )? FloatingLiteral          
+InitialBlock : TypeDef Identifier ( Assign  Expr)? ( Comma Identifier ( Assign  Expr)?)*  Semi;
+ArrayInitBlock : TypeDef Identifier  LeftBracket  IntgerLiteral  RightBracket  Semi; 
+
+
+AssignBlock : arrayItem  Assign  Expr  Semi | Identifier  Assign  Expr  Semi;
+
+
+ifBlocks : ifBlock elifBlock* elseBlock?;
+ifBlock :  If   LeftParen condition RightParen   LeftBrace Body  RightBrace;
+elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace Body  RightBrace;
+elseBlock :  Else   LeftBrace Body  RightBrace;
+
+condition :  Expr;
+
+forBlock :  For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen   LeftBrace Body  RightBrace
+            |For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen  Semi;
+for1Block :  Identifier  Assign  Expr ( Comma for1Block)?;
+for3Block : Identifier  Assign  Expr ( Comma for3Block)?;
+
+returnBlock : Return IntgerLiteral?  Semi |Return Identifier?  Semi;
+
+Expr
+    :  LeftParen  Expr  RightParen                
+    |  Not Expr                  
+    | Expr  Star  Expr
+    | Expr  Div  Expr
+    | Expr  Mod  Expr
+    | Expr  Plus  Expr   
+    | Expr  Minus  Expr
+    | Expr  Equal Expr 
+    | Expr  NotEqual Expr
+    | Expr  Less Expr
+    | Expr  Greater Expr
+    | Expr  LessEqual Expr
+    | Expr  GreaterEqual Expr
+    | Expr AndAnd Expr             
+    | Expr OrOr Expr                      
+    | Minus? IntgerLiteral                                   
+    | Minus? FloatingLiteral          
     | CharacterLiteral                       
     | StringLiteral                       
     | Identifier                         
-    | func                                                           
-    ;
+    | FuncRef;
 
-mType : Int| Double | Char | String ;
+TypeDef : Int| Double | Char | String ;
 
-mArray : Identifier  LeftBracket  IntgerLiteral  RightBracket ; 
+ArrayRef : Identifier  LeftBracket  IntgerLiteral  RightBracket ; 
 
-mStruct : Struct Identifier;
+arrayItem : Identifier  LeftBracket  Expr  RightBracket ;
 
-structMember: (Identifier | arrayItem)Dot(Identifier | arrayItem);
+FuncRef : StrlenRef|PrintfRef |GetsRef| FuncRef;
 
-arrayItem : Identifier  LeftBracket  expr  RightBracket ;
+StrlenRef : Strlen  LeftParen  Identifier  RightParen ;
 
+PrintfRef : Printf  LeftParen  StringLiteral ( Comma Expr)*  RightParen 
+            |Printf  LeftParen  Identifier ( Comma Expr)*  RightParen;
 
-//函数
-func : (strlenFunc | atoiFunc | printfFunc | scanfFunc | getsFunc | selfDefinedFunc);
+GetsRef : Gets  LeftParen  Identifier  RightParen ;
 
-//strlen
-strlenFunc : Strlen  LeftParen  Identifier  RightParen ;
+FuncRef : Identifier  LeftParen ((Literal|Identifier)( Comma(Literal|Identifier))*)?  RightParen ;
 
-//atoi
-atoiFunc : Atoi  LeftParen  Identifier  RightParen  ;
-
-//printf
-printfFunc 
-    : Printf  LeftParen  (StringLiteral | Identifier) ( Comma expr)*  RightParen ;
-
-//scanf
-scanfFunc : Scanf  LeftParen  StringLiteral ( Comma(And)?(Identifier|arrayItem|structMember))*  RightParen ;
-
-//gets
-getsFunc : Gets  LeftParen  Identifier  RightParen ;
-
-//Selfdefined
-selfDefinedFunc : Identifier  LeftParen ((argument|Identifier)( Comma(argument|Identifier))*)?  RightParen ;
-
-argument : IntgerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
+Literal : IntgerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
 
 IntgerLiteral : HexadecimalLiteral | DecimalLiteral | OctalLiteral | BinaryLiteral;

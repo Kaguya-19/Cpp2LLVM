@@ -83,7 +83,7 @@ class Lexer():
     
     def skip(self):
         self.old_pos = self.pos
-        while self.advance_word(Lexer.Skip) != None :
+        while self.advance_word(Lexer.Skip) != None or self.advance_word(Lexer.MultiLineMacro) != None or self.advance_word(Lexer.Directive) != None:
             self.old_pos = self.pos
             continue
         return self.current_char
@@ -102,8 +102,8 @@ class Lexer():
                 token = self.scan_character()
             elif self.current_char == '"':
                 token = self.scan_string()
-            elif self.current_char == '#':
-                token = self.scan_directive()
+            # elif self.current_char == '#':
+            #     token = self.scan_directive()
             else:
                 # print(self.text)
                 # print(self.current_char)
@@ -261,17 +261,17 @@ class Lexer():
         # if Lexer.StringLiteral.match(result):
         #     return Token('StringLiteral', result, self.old_pos, self.pos)
         
-    def scan_directive(self):
+    # def scan_directive(self):
         
-        result = self.advance_word(Lexer.MultiLineMacro)
-        if result:
-            return Token('MultiLineMacro', result, self.old_pos, self.pos)
+    #     result = self.advance_word(Lexer.MultiLineMacro)
+    #     if result:
+    #         return Token('MultiLineMacro', result, self.old_pos, self.pos)
         
-        result = self.advance_word(Lexer.Directive)
-        if result:
-            return Token('Directive', result, self.old_pos, self.pos)
+    #     result = self.advance_word(Lexer.Directive)
+    #     if result:
+    #         return Token('Directive', result, self.old_pos, self.pos)
 
-        return None
+    #     return None
         
         
 if __name__ == '__main__':
