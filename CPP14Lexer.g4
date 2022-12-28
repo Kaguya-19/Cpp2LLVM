@@ -374,3 +374,6 @@ Length:'length';
 Vector:'vector';
 Find:'find';
 Push_back:'push_back';
+Strlen:'strlen';
+Printf:'printf';
+Gets:'gets';

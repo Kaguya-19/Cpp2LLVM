@@ -24,472 +24,81 @@ options {
 	tokenVocab = CPP14Lexer;
 }
 /*Basic concepts*/
-
-translationUnit: declarationseq? EOF;
 /*Expressions*/
 
-primaryExpression:
-	literal+
-	| LeftParen expression RightParen
-	| idExpression;
-
-idExpression:
-	Identifier
-	| operatorFunctionId
-	| literalOperatorId
-	| templateId
-	| myId;
-
-postfixExpression:
-	primaryExpression
-	| postfixExpression LeftBracket (expression | bracedInitList) RightBracket
-	| postfixExpression LeftParen initializerList? RightParen
-	| simpleTypeSpecifier (
-		LeftParen initializerList? RightParen
-		| bracedInitList
-	)
-	| postfixExpression (Dot | Arrow) (
-		Template? idExpression
-	)
-	| postfixExpression (PlusPlus | MinusMinus);
-/*
- add a middle layer to eliminate duplicated function declarations
- */
-
-unaryExpression:
-	postfixExpression
-	| (PlusPlus | MinusMinus | unaryOperator | Sizeof) unaryExpression
-	| newExpression
-	| deleteExpression;
-
-unaryOperator: Or | Star | And | Plus | Tilde | Minus | Not;
-
-newExpression:
-	Doublecolon? New  (
-		newTypeId
-		| (LeftParen theTypeId RightParen)
-	);
-
-newTypeId: typeSpecifierSeq newDeclarator?;
-
-newDeclarator:
-	pointerOperator newDeclarator?
-	| noPointerNewDeclarator;
-
-noPointerNewDeclarator:
-	LeftBracket expression RightBracket 
-	| noPointerNewDeclarator LeftBracket constantExpression RightBracket ;
-
-deleteExpression:
-	Doublecolon? Delete (LeftBracket RightBracket)? castExpression;
-
-castExpression:
-	unaryExpression
-	| LeftParen theTypeId RightParen castExpression;
-
-pointerMemberExpression:
-	castExpression ((DotStar | ArrowStar) castExpression)*;
-
-multiplicativeExpression:
-	pointerMemberExpression (
-		(Star | Div | Mod) pointerMemberExpression
-	)*;
-
-additiveExpression:
-	multiplicativeExpression (
-		(Plus | Minus) multiplicativeExpression
-	)*;
-
-shiftExpression:
-	additiveExpression (shiftOperator additiveExpression)*;
-
-shiftOperator: Greater Greater | Less Less;
-
-relationalExpression:
-	shiftExpression (
-		(Less | Greater | LessEqual | GreaterEqual) shiftExpression
-	)*;
-
-equalityExpression:
-	relationalExpression (
-		(Equal | NotEqual) relationalExpression
-	)*;
-
-andExpression: equalityExpression (And equalityExpression)*;
-
-exclusiveOrExpression: andExpression (Caret andExpression)*;
-
-inclusiveOrExpression:
-	exclusiveOrExpression (Or exclusiveOrExpression)*;
-
-logicalAndExpression:
-	inclusiveOrExpression (AndAnd inclusiveOrExpression)*;
-
-logicalOrExpression:
-	logicalAndExpression (OrOr logicalAndExpression)*;
-
-conditionalExpression:
-	logicalOrExpression (
-		Question expression Colon conditionalExpression
-	)?;
-
-
-assignmentOperator:
-	Assign
-	| StarAssign
-	| DivAssign
-	| ModAssign
-	| PlusAssign
-	| MinusAssign
-	| RightShiftAssign
-	| LeftShiftAssign
-	| AndAssign
-	| XorAssign
-	| OrAssign;
-
-expression: conditionalExpression (Comma conditionalExpression)*;
-
-constantExpression: conditionalExpression;
-/*Statements*/
-
-statement:
-	labeledStatement
-	| simpleDeclaration
-	|  (
-		expressionStatement
-		| compoundStatement
-		| selectionStatement
-		| iterationStatement
-		| jumpStatement
-	);
-
-labeledStatement:
-	 (
-		Identifier
-		| Case constantExpression
-		| Default
-	) Colon statement;
-
-expressionStatement: expression? Semi;
-
-compoundStatement: LeftBrace statementSeq? RightBrace;
-
-statementSeq: statement+;
-
-selectionStatement:
-	If LeftParen condition RightParen statement (Else statement)?
-	| Switch LeftParen condition RightParen statement;
-
-condition:
-	expression
-	|  declSpecifierSeq declarator (
-		Assign initializerClause
-		| bracedInitList
-	);
-
-iterationStatement:
-	While LeftParen condition RightParen statement
-	| Do statement While LeftParen expression RightParen Semi
-	| For LeftParen (
-		forInitStatement condition? Semi expression?
-	) RightParen statement;
-
-forInitStatement: expressionStatement | simpleDeclaration;
-
-jumpStatement:
-	(
-		Break
-		| Continue
-		| Return (expression | bracedInitList)?
-	) Semi;
-
-/*Declarations*/
-
-declarationseq: declaration+;
-
-declaration:
-	simpleDeclaration
-	| functionDefinition
-	| templateDeclaration
-	| explicitInstantiation
-	| Semi;
-
-simpleDeclaration:
-	declSpecifierSeq? initDeclaratorList? Semi;
-
-declSpecifier:
-	typeSpecifier
-	| Typedef;
-	
-declSpecifierSeq: declSpecifier+?;
-
-typedefName: Identifier;
-
-typeSpecifier:
-	trailingTypeSpecifier
-	| classSpecifier;
-
-trailingTypeSpecifier:
-	simpleTypeSpecifier
-	| cvQualifier;
-
-typeSpecifierSeq: typeSpecifier+ ;
-
-simpleTypeLengthModifier:
-	Short
-	| Long;
-	
-simpleTypeSignednessModifier:
-	Unsigned
-	| Signed;
-
-simpleTypeSpecifier:
-	 theTypeName
-	| simpleTypeSignednessModifier
-	| simpleTypeSignednessModifier? simpleTypeLengthModifier+
-	| simpleTypeSignednessModifier? Char
-	| Bool
-	| simpleTypeSignednessModifier? simpleTypeLengthModifier* Int
-	| Float
-	| simpleTypeLengthModifier? Double
-	| Void
-	| Auto;
+translationUnit :(initialBlock|arrayInitBlock|functionDefine )*;
 
-theTypeName:
-	className
-	| typedefName
-	| simpleTemplateId;
+functionDefine : typeDef Identifier  LeftParen  params  RightParen  LeftBrace funcBody  RightBrace;
 
-/*Declarators*/
+params : (param |param( Comma param)+)?;
+param  : typeDef Identifier;
 
-initDeclaratorList: initDeclarator (Comma initDeclarator)*;
+funcBody : body returnBlock;
 
-initDeclarator: declarator initializer?;
+body : (blocks | func Semi)*;
 
-declarator:
-	pointerDeclarator;
+blocks : initialBlock | arrayInitBlock | assignBlock | ifBlocks| forBlock | returnBlock;
 
-pointerDeclarator: (pointerOperator Const?)* noPointerDeclarator;
+initialBlock : typeDef Identifier ( Assign  expr)? ( Comma Identifier ( Assign  expr)?)*  Semi;
+arrayInitBlock : typeDef Identifier  LeftBracket  IntegerLiteral  RightBracket  Semi; 
 
-noPointerDeclarator:
-	declaratorid 
-	| noPointerDeclarator (
-		parametersAndQualifiers
-		| LeftBracket constantExpression? RightBracket 
-	)
-	| LeftParen pointerDeclarator RightParen;
 
-parametersAndQualifiers:
-	LeftParen parameterDeclarationClause? RightParen cvqualifierseq? refqualifier?
-		 ;
+assignBlock : arrayItem  Assign  expr  Semi | Identifier  Assign  expr  Semi;
 
+ifBlocks : ifBlock elifBlock* elseBlock?;
+ifBlock :  If   LeftParen condition RightParen   LeftBrace body  RightBrace;
+elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace body  RightBrace;
+elseBlock :  Else   LeftBrace body  RightBrace;
 
-pointerOperator:
-	(And | AndAnd) 
-	|  Star  cvqualifierseq?;
+condition :  expr;
 
-cvqualifierseq: cvQualifier+;
+forBlock :  For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen   LeftBrace body  RightBrace
+            |For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen  Semi;
+for1Block :  Identifier  Assign  expr ( Comma for1Block)?;
+for3Block : Identifier  Assign  expr ( Comma for3Block)?;
 
-cvQualifier: Const | Volatile;
+returnBlock : Return IntegerLiteral?  Semi |Return Identifier?  Semi;
 
-refqualifier: And | AndAnd;
+expr
+    :  LeftParen  expr  RightParen                
+    |  Not expr                  
+    | expr  Star  expr
+    | expr  Div  expr
+    | expr  Mod  expr
+    | expr  Plus  expr   
+    | expr  Minus  expr
+    | expr  Equal expr 
+    | expr  NotEqual expr
+    | expr  Less expr
+    | expr  Greater expr
+    | expr  LessEqual expr
+    | expr  GreaterEqual expr
+    | expr AndAnd expr             
+    | expr OrOr expr                      
+    | Minus? IntegerLiteral                                   
+    | Minus? FloatingLiteral          
+    | CharacterLiteral                       
+    | StringLiteral                       
+    | Identifier                         
+    | func;
 
-declaratorid: Ellipsis? idExpression;
+typeDef : Int| Double | Char;
 
-theTypeId: typeSpecifierSeq ;
+arrayRef : Identifier  LeftBracket  IntegerLiteral  RightBracket ; 
 
-parameterDeclarationClause:
-	parameterDeclarationList (Comma? Ellipsis)?;
+arrayItem : Identifier  LeftBracket  expr  RightBracket ;
 
-parameterDeclarationList:
-	parameterDeclaration (Comma parameterDeclaration)*;
+func : strlenRef|printfRef |getsRef| funcRef;
 
-parameterDeclaration:
-	 declSpecifierSeq 
-		declarator  (
-			Assign initializerClause
-		)?;
+strlenRef : Strlen  LeftParen  Identifier  RightParen ;
 
-functionDefinition:
-	 declSpecifierSeq? declarator functionBody;
+printfRef : Printf  LeftParen  StringLiteral ( Comma expr)*  RightParen 
+            |Printf  LeftParen  Identifier ( Comma expr)*  RightParen;
 
-functionBody:
-	 compoundStatement
-	| Assign (Default | Delete) Semi;
+getsRef : Gets  LeftParen  Identifier  RightParen ;
 
-initializer:
-	braceOrEqualInitializer
-	| LeftParen initializerList RightParen;
+funcRef : Identifier  LeftParen ((literal|Identifier)( Comma(literal|Identifier))*)?  RightParen ;
 
-braceOrEqualInitializer:
-	Assign initializerClause
-	| bracedInitList;
+literal : IntegerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
 
-initializerClause: conditionalExpression | bracedInitList;
-
-initializerList:
-	initializerClause Ellipsis? (
-		Comma initializerClause Ellipsis?
-	)*;
-
-bracedInitList: LeftBrace (initializerList Comma?)? RightBrace;
-/*Classes*/
-
-className: Identifier | simpleTemplateId |myClass;
-
-classSpecifier:
-	classHead LeftBrace memberSpecification? RightBrace;
-
-classHead:
-	classKey classHeadName? ;
-
-classHeadName:  className;
-
-classKey: Class | Struct;
-
-memberSpecification:
-	(memberdeclaration | accessSpecifier Colon)+;
-
-memberdeclaration:
-	 declSpecifierSeq? memberDeclaratorList? Semi
-	| functionDefinition
-	| templateDeclaration
-	| Semi;
-
-memberDeclaratorList:
-	memberDeclarator (Comma memberDeclarator)*;
-
-memberDeclarator:
-	declarator braceOrEqualInitializer?
-	| Identifier?  Colon constantExpression;
-
-
-/*Derived classes*/
-
-baseSpecifierList:
-	className Ellipsis? (Comma className Ellipsis?)*;
-
-accessSpecifier: Private | Protected | Public;
-/*Special member functions*/
-
-
-memInitializerList:
-	memInitializer Ellipsis? (Comma memInitializer Ellipsis?)*;
-
-memInitializer:
-	meminitializerid (
-		LeftParen initializerList? RightParen
-		| bracedInitList
-	);
-
-meminitializerid: className | Identifier;
-/*Overloading*/
-
-operatorFunctionId: Operator theOperator;
-
-literalOperatorId:
-	Operator (
-		StringLiteral Identifier
-	);
-/*Templates*/
-
-templateDeclaration:
-	Template Less templateparameterList Greater declaration;
-
-templateparameterList:
-	templateParameter (Comma templateParameter)*;
-
-templateParameter: typeParameter | parameterDeclaration;
-
-typeParameter:
-	(
-		(Template Less templateparameterList Greater)? Class
-		| Typename_
-	) ((Ellipsis? Identifier?) | (Identifier? Assign theTypeId));
-
-simpleTemplateId:
-	templateName Less templateArgumentList? Greater;
-
-templateId:
-	simpleTemplateId
-	| (operatorFunctionId | literalOperatorId) Less templateArgumentList? Greater;
-
-templateName: Identifier;
-
-templateArgumentList:
-	templateArgument Ellipsis? (Comma templateArgument Ellipsis?)*;
-
-templateArgument: theTypeId | constantExpression | idExpression;
-
-explicitInstantiation:  Template declaration;
-
-
-/*Preprocessing directives*/
-
-/*Lexer*/
-
-theOperator:
-	New (LeftBracket RightBracket)?
-	| Delete (LeftBracket RightBracket)?
-	| Plus
-	| Minus
-	| Star
-	| Div
-	| Mod
-	| Caret
-	| And
-	| Or
-	| Tilde
-	| Not
-	| Assign
-	| Greater
-	| Less
-	| GreaterEqual
-	| PlusAssign
-	| MinusAssign
-	| StarAssign
-	| ModAssign
-	| XorAssign
-	| AndAssign
-	| OrAssign
-	| Less Less
-	| Greater Greater
-	| RightShiftAssign
-	| LeftShiftAssign
-	| Equal
-	| NotEqual
-	| LessEqual
-	| AndAnd
-	| OrOr
-	| PlusPlus
-	| MinusMinus
-	| Comma
-	| ArrowStar
-	| Arrow
-	| LeftParen RightParen
-	| LeftBracket RightBracket;
-
-literal:
-	IntegerLiteral
-	| CharacterLiteral
-	| FloatingLiteral
-	| StringLiteral
-	| BooleanLiteral
-	| PointerLiteral;
-	
-myId:
-	Length
-	| Push
-	| Empty
-	| Pop
-	| Top
-	| Cin
-	| Cout
-	| Length
-	| Find
-	| Push_back;
-
-myClass:
-	Stack
-	| Vector
-	| String;
+// IntegerLiteral : HexadecimalLiteral | DecimalLiteral | OctalLiteral | BinaryLiteral;

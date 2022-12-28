@@ -14,168 +14,68 @@ class myParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#primaryExpression.
-    def visitPrimaryExpression(self, ctx:myParser.PrimaryExpressionContext):
+    # Visit a parse tree produced by myParser#functionDefine.
+    def visitFunctionDefine(self, ctx:myParser.FunctionDefineContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#idExpression.
-    def visitIdExpression(self, ctx:myParser.IdExpressionContext):
+    # Visit a parse tree produced by myParser#params.
+    def visitParams(self, ctx:myParser.ParamsContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#postfixExpression.
-    def visitPostfixExpression(self, ctx:myParser.PostfixExpressionContext):
+    # Visit a parse tree produced by myParser#param.
+    def visitParam(self, ctx:myParser.ParamContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#unaryExpression.
-    def visitUnaryExpression(self, ctx:myParser.UnaryExpressionContext):
+    # Visit a parse tree produced by myParser#funcBody.
+    def visitFuncBody(self, ctx:myParser.FuncBodyContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#unaryOperator.
-    def visitUnaryOperator(self, ctx:myParser.UnaryOperatorContext):
+    # Visit a parse tree produced by myParser#body.
+    def visitBody(self, ctx:myParser.BodyContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#newExpression.
-    def visitNewExpression(self, ctx:myParser.NewExpressionContext):
+    # Visit a parse tree produced by myParser#blocks.
+    def visitBlocks(self, ctx:myParser.BlocksContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#newTypeId.
-    def visitNewTypeId(self, ctx:myParser.NewTypeIdContext):
+    # Visit a parse tree produced by myParser#initialBlock.
+    def visitInitialBlock(self, ctx:myParser.InitialBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#newDeclarator.
-    def visitNewDeclarator(self, ctx:myParser.NewDeclaratorContext):
+    # Visit a parse tree produced by myParser#arrayInitBlock.
+    def visitArrayInitBlock(self, ctx:myParser.ArrayInitBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#noPointerNewDeclarator.
-    def visitNoPointerNewDeclarator(self, ctx:myParser.NoPointerNewDeclaratorContext):
+    # Visit a parse tree produced by myParser#assignBlock.
+    def visitAssignBlock(self, ctx:myParser.AssignBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#deleteExpression.
-    def visitDeleteExpression(self, ctx:myParser.DeleteExpressionContext):
+    # Visit a parse tree produced by myParser#ifBlocks.
+    def visitIfBlocks(self, ctx:myParser.IfBlocksContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#castExpression.
-    def visitCastExpression(self, ctx:myParser.CastExpressionContext):
+    # Visit a parse tree produced by myParser#ifBlock.
+    def visitIfBlock(self, ctx:myParser.IfBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#pointerMemberExpression.
-    def visitPointerMemberExpression(self, ctx:myParser.PointerMemberExpressionContext):
+    # Visit a parse tree produced by myParser#elifBlock.
+    def visitElifBlock(self, ctx:myParser.ElifBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#multiplicativeExpression.
-    def visitMultiplicativeExpression(self, ctx:myParser.MultiplicativeExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#additiveExpression.
-    def visitAdditiveExpression(self, ctx:myParser.AdditiveExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#shiftExpression.
-    def visitShiftExpression(self, ctx:myParser.ShiftExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#shiftOperator.
-    def visitShiftOperator(self, ctx:myParser.ShiftOperatorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#relationalExpression.
-    def visitRelationalExpression(self, ctx:myParser.RelationalExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#equalityExpression.
-    def visitEqualityExpression(self, ctx:myParser.EqualityExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#andExpression.
-    def visitAndExpression(self, ctx:myParser.AndExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#exclusiveOrExpression.
-    def visitExclusiveOrExpression(self, ctx:myParser.ExclusiveOrExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#inclusiveOrExpression.
-    def visitInclusiveOrExpression(self, ctx:myParser.InclusiveOrExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#logicalAndExpression.
-    def visitLogicalAndExpression(self, ctx:myParser.LogicalAndExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#logicalOrExpression.
-    def visitLogicalOrExpression(self, ctx:myParser.LogicalOrExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#conditionalExpression.
-    def visitConditionalExpression(self, ctx:myParser.ConditionalExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#assignmentOperator.
-    def visitAssignmentOperator(self, ctx:myParser.AssignmentOperatorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#expression.
-    def visitExpression(self, ctx:myParser.ExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#constantExpression.
-    def visitConstantExpression(self, ctx:myParser.ConstantExpressionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#statement.
-    def visitStatement(self, ctx:myParser.StatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#labeledStatement.
-    def visitLabeledStatement(self, ctx:myParser.LabeledStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#expressionStatement.
-    def visitExpressionStatement(self, ctx:myParser.ExpressionStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#compoundStatement.
-    def visitCompoundStatement(self, ctx:myParser.CompoundStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#statementSeq.
-    def visitStatementSeq(self, ctx:myParser.StatementSeqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#selectionStatement.
-    def visitSelectionStatement(self, ctx:myParser.SelectionStatementContext):
+    # Visit a parse tree produced by myParser#elseBlock.
+    def visitElseBlock(self, ctx:myParser.ElseBlockContext):
         return self.visitChildren(ctx)
 
 
@@ -184,343 +84,73 @@ class myParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#iterationStatement.
-    def visitIterationStatement(self, ctx:myParser.IterationStatementContext):
+    # Visit a parse tree produced by myParser#forBlock.
+    def visitForBlock(self, ctx:myParser.ForBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#forInitStatement.
-    def visitForInitStatement(self, ctx:myParser.ForInitStatementContext):
+    # Visit a parse tree produced by myParser#for1Block.
+    def visitFor1Block(self, ctx:myParser.For1BlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#jumpStatement.
-    def visitJumpStatement(self, ctx:myParser.JumpStatementContext):
+    # Visit a parse tree produced by myParser#for3Block.
+    def visitFor3Block(self, ctx:myParser.For3BlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#declarationseq.
-    def visitDeclarationseq(self, ctx:myParser.DeclarationseqContext):
+    # Visit a parse tree produced by myParser#returnBlock.
+    def visitReturnBlock(self, ctx:myParser.ReturnBlockContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#declaration.
-    def visitDeclaration(self, ctx:myParser.DeclarationContext):
+    # Visit a parse tree produced by myParser#expr.
+    def visitExpr(self, ctx:myParser.ExprContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#simpleDeclaration.
-    def visitSimpleDeclaration(self, ctx:myParser.SimpleDeclarationContext):
+    # Visit a parse tree produced by myParser#typeDef.
+    def visitTypeDef(self, ctx:myParser.TypeDefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#declSpecifier.
-    def visitDeclSpecifier(self, ctx:myParser.DeclSpecifierContext):
+    # Visit a parse tree produced by myParser#arrayRef.
+    def visitArrayRef(self, ctx:myParser.ArrayRefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#declSpecifierSeq.
-    def visitDeclSpecifierSeq(self, ctx:myParser.DeclSpecifierSeqContext):
+    # Visit a parse tree produced by myParser#arrayItem.
+    def visitArrayItem(self, ctx:myParser.ArrayItemContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#typedefName.
-    def visitTypedefName(self, ctx:myParser.TypedefNameContext):
+    # Visit a parse tree produced by myParser#func.
+    def visitFunc(self, ctx:myParser.FuncContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#typeSpecifier.
-    def visitTypeSpecifier(self, ctx:myParser.TypeSpecifierContext):
+    # Visit a parse tree produced by myParser#strlenRef.
+    def visitStrlenRef(self, ctx:myParser.StrlenRefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#trailingTypeSpecifier.
-    def visitTrailingTypeSpecifier(self, ctx:myParser.TrailingTypeSpecifierContext):
+    # Visit a parse tree produced by myParser#printfRef.
+    def visitPrintfRef(self, ctx:myParser.PrintfRefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#typeSpecifierSeq.
-    def visitTypeSpecifierSeq(self, ctx:myParser.TypeSpecifierSeqContext):
+    # Visit a parse tree produced by myParser#getsRef.
+    def visitGetsRef(self, ctx:myParser.GetsRefContext):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#simpleTypeLengthModifier.
-    def visitSimpleTypeLengthModifier(self, ctx:myParser.SimpleTypeLengthModifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#simpleTypeSignednessModifier.
-    def visitSimpleTypeSignednessModifier(self, ctx:myParser.SimpleTypeSignednessModifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#simpleTypeSpecifier.
-    def visitSimpleTypeSpecifier(self, ctx:myParser.SimpleTypeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#theTypeName.
-    def visitTheTypeName(self, ctx:myParser.TheTypeNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#initDeclaratorList.
-    def visitInitDeclaratorList(self, ctx:myParser.InitDeclaratorListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#initDeclarator.
-    def visitInitDeclarator(self, ctx:myParser.InitDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#declarator.
-    def visitDeclarator(self, ctx:myParser.DeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#pointerDeclarator.
-    def visitPointerDeclarator(self, ctx:myParser.PointerDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#noPointerDeclarator.
-    def visitNoPointerDeclarator(self, ctx:myParser.NoPointerDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#parametersAndQualifiers.
-    def visitParametersAndQualifiers(self, ctx:myParser.ParametersAndQualifiersContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#pointerOperator.
-    def visitPointerOperator(self, ctx:myParser.PointerOperatorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#cvqualifierseq.
-    def visitCvqualifierseq(self, ctx:myParser.CvqualifierseqContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#cvQualifier.
-    def visitCvQualifier(self, ctx:myParser.CvQualifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#refqualifier.
-    def visitRefqualifier(self, ctx:myParser.RefqualifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#declaratorid.
-    def visitDeclaratorid(self, ctx:myParser.DeclaratoridContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#theTypeId.
-    def visitTheTypeId(self, ctx:myParser.TheTypeIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#parameterDeclarationClause.
-    def visitParameterDeclarationClause(self, ctx:myParser.ParameterDeclarationClauseContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#parameterDeclarationList.
-    def visitParameterDeclarationList(self, ctx:myParser.ParameterDeclarationListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#parameterDeclaration.
-    def visitParameterDeclaration(self, ctx:myParser.ParameterDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#functionDefinition.
-    def visitFunctionDefinition(self, ctx:myParser.FunctionDefinitionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#functionBody.
-    def visitFunctionBody(self, ctx:myParser.FunctionBodyContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#initializer.
-    def visitInitializer(self, ctx:myParser.InitializerContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#braceOrEqualInitializer.
-    def visitBraceOrEqualInitializer(self, ctx:myParser.BraceOrEqualInitializerContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#initializerClause.
-    def visitInitializerClause(self, ctx:myParser.InitializerClauseContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#initializerList.
-    def visitInitializerList(self, ctx:myParser.InitializerListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#bracedInitList.
-    def visitBracedInitList(self, ctx:myParser.BracedInitListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#className.
-    def visitClassName(self, ctx:myParser.ClassNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#classSpecifier.
-    def visitClassSpecifier(self, ctx:myParser.ClassSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#classHead.
-    def visitClassHead(self, ctx:myParser.ClassHeadContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#classHeadName.
-    def visitClassHeadName(self, ctx:myParser.ClassHeadNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#classKey.
-    def visitClassKey(self, ctx:myParser.ClassKeyContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memberSpecification.
-    def visitMemberSpecification(self, ctx:myParser.MemberSpecificationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memberdeclaration.
-    def visitMemberdeclaration(self, ctx:myParser.MemberdeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memberDeclaratorList.
-    def visitMemberDeclaratorList(self, ctx:myParser.MemberDeclaratorListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memberDeclarator.
-    def visitMemberDeclarator(self, ctx:myParser.MemberDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#baseSpecifierList.
-    def visitBaseSpecifierList(self, ctx:myParser.BaseSpecifierListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#accessSpecifier.
-    def visitAccessSpecifier(self, ctx:myParser.AccessSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memInitializerList.
-    def visitMemInitializerList(self, ctx:myParser.MemInitializerListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#memInitializer.
-    def visitMemInitializer(self, ctx:myParser.MemInitializerContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#meminitializerid.
-    def visitMeminitializerid(self, ctx:myParser.MeminitializeridContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#operatorFunctionId.
-    def visitOperatorFunctionId(self, ctx:myParser.OperatorFunctionIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#literalOperatorId.
-    def visitLiteralOperatorId(self, ctx:myParser.LiteralOperatorIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateDeclaration.
-    def visitTemplateDeclaration(self, ctx:myParser.TemplateDeclarationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateparameterList.
-    def visitTemplateparameterList(self, ctx:myParser.TemplateparameterListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateParameter.
-    def visitTemplateParameter(self, ctx:myParser.TemplateParameterContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#typeParameter.
-    def visitTypeParameter(self, ctx:myParser.TypeParameterContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#simpleTemplateId.
-    def visitSimpleTemplateId(self, ctx:myParser.SimpleTemplateIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateId.
-    def visitTemplateId(self, ctx:myParser.TemplateIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateName.
-    def visitTemplateName(self, ctx:myParser.TemplateNameContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateArgumentList.
-    def visitTemplateArgumentList(self, ctx:myParser.TemplateArgumentListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#templateArgument.
-    def visitTemplateArgument(self, ctx:myParser.TemplateArgumentContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#explicitInstantiation.
-    def visitExplicitInstantiation(self, ctx:myParser.ExplicitInstantiationContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#theOperator.
-    def visitTheOperator(self, ctx:myParser.TheOperatorContext):
+    # Visit a parse tree produced by myParser#funcRef.
+    def visitFuncRef(self, ctx:myParser.FuncRefContext):
         return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by myParser#literal.
     def visitLiteral(self, ctx:myParser.LiteralContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#myId.
-    def visitMyId(self, ctx:myParser.MyIdContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by myParser#myClass.
-    def visitMyClass(self, ctx:myParser.MyClassContext):
         return self.visitChildren(ctx)
 
 
