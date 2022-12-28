@@ -634,3 +634,731 @@ class Visitor:
         self.Builders.append(ir.IRBuilder(FalseBlock))
         self.SymbolTable.QuitScope()
         return
+
+    def visitElseBlock(self, tree):
+        '''
+        语法规则：elseBlock : 'else' '{' body '}';
+        描述：单一else语句块
+        返回：无
+        '''
+        #Else分块直接处理body内容
+        self.SymbolTable.EnterScope()
+        self.visit(tree.getChild(2)) # body
+        self.SymbolTable.QuitScope()
+        return
+
+    def visitWhileBlock(self, tree):
+        '''
+        语法规则：whileBlock : 'while' '(' condition ')' '{' body '}';
+        描述：while语句块
+        返回：无
+        '''
+        self.SymbolTable.EnterScope()
+        TheBuilder = self.Builders[-1]
+        #while语句分为三个分块
+        WhileCondition = TheBuilder.append_basic_block()
+        WhileBody = TheBuilder.append_basic_block()
+        WhileEnd = TheBuilder.append_basic_block()
+
+        #首先执行Condition分块
+        TheBuilder.branch(WhileCondition)
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(WhileCondition)
+        self.Builders.append(ir.IRBuilder(WhileCondition))
+        
+        #根据condition结果决定执行body还是结束while循环
+        result = self.visit(tree.getChild(2)) # condition
+        self.Builders[-1].cbranch(result['name'], WhileBody, WhileEnd)
+        
+        #执行body
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(WhileBody)
+        self.Builders.append(ir.IRBuilder(WhileBody))
+        self.visit(tree.getChild(5)) # body
+
+        #执行body后重新判断condition
+        self.Builders[-1].branch(WhileCondition)
+
+        #结束while循环
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(WhileEnd)
+        self.Builders.append(ir.IRBuilder(WhileEnd))
+        self.SymbolTable.QuitScope()
+        return
+
+
+    def visitForBlock(self, tree):
+        '''
+        语法规则：forBlock : 'for' '(' for1Block  ';' condition ';' for3Block ')' ('{' body '}'|';');
+        描述：for语句块
+        返回：无
+        '''
+        self.SymbolTable.EnterScope()
+        
+        #for循环首先初始化局部变量
+        self.visit(tree.getChild(2))
+        #for循环的三种block
+        TheBuilder = self.Builders[-1]
+        ForCondition = TheBuilder.append_basic_block()
+        ForBody = TheBuilder.append_basic_block()
+        ForEnd = TheBuilder.append_basic_block()
+       
+        #判断condition
+        TheBuilder.branch(ForCondition)
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(ForCondition)
+        self.Builders.append(ir.IRBuilder(ForCondition))
+                
+        #根据condition结果决定跳转到body或者结束
+        result = self.visit(tree.getChild(4)) # condition block
+        self.Builders[-1].cbranch(result['name'], ForBody, ForEnd)
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(ForBody)
+        self.Builders.append(ir.IRBuilder(ForBody))
+
+        #处理body
+        if (tree.getChildCount() == 11):
+            self.visit(tree.getChild(9)) # main body
+        
+        #处理step语句
+        self.visit(tree.getChild(6)) # step block
+        
+        #一次循环后重新判断condition
+        self.Builders[-1].branch(ForCondition)
+
+        #结束循环
+        self.Blocks.pop()
+        self.Builders.pop()
+        self.Blocks.append(ForEnd)
+        self.Builders.append(ir.IRBuilder(ForEnd))
+        self.SymbolTable.QuitScope()
+        return
+
+    def visitFor1Block(self, tree):
+        '''
+        语法规则：for1Block :  mID '=' expr (',' for1Block)?|;
+        描述：for语句块的第一个参数
+        返回：无
+        '''
+        #初始化参数为空
+        Length = tree.getChildCount()
+        if Length == 0:
+            return
+
+        TmpNeedLoad = self.WhetherNeedLoad
+        self.WhetherNeedLoad = False
+        result0 = self.visit(tree.getChild(0)) # mID
+        self.WhetherNeedLoad = TmpNeedLoad
+        
+        #访问表达式
+        result1 = self.visit(tree.getChild(2)) # expr
+        result1 = self.assignConvert(result1, result0['type'])
+        self.Builders[-1].store(result1['name'], result0['name'])
+
+        if Length > 3:
+            self.visit(tree.getChild(4))
+        return
+
+
+    def visitFor3Block(self, tree):
+        '''
+        语法规则：for3Block : mID '=' expr (',' for3Block)?|;
+        描述：for语句块的第三个参数
+        返回：无
+        '''
+        Length = tree.getChildCount()
+        if Length == 0:
+            return
+            
+        TmpNeedLoad = self.WhetherNeedLoad
+        self.WhetherNeedLoad = False
+        result0 = self.visit(tree.getChild(0))
+        self.WhetherNeedLoad = TmpNeedLoad
+
+        result1 = self.visit(tree.getChild(2))
+        result1 = self.assignConvert(result1, result0['type'])
+        self.Builders[-1].store(result1['name'], result0['name'])
+
+        if Length > 3:
+            self.visit(tree.getChild(4))
+        return
+
+
+    def visitReturnBlock(self, tree):
+        '''
+        语法规则：returnBlock : 'return' (mINT|mID)? ';';
+        描述：return语句块
+        返回：无
+        '''
+        #返回空
+        if tree.getChildCount() == 2:
+            RealReturnValue = self.Builders[-1].ret_void()
+            JudgeTruth = False
+            return {
+                    'type': void,
+                    'const': JudgeTruth,
+                    'name': RealReturnValue
+            }
+
+        #访问返回值
+        ReturnIndex = self.visit(tree.getChild(1))
+        RealReturnValue = self.Builders[-1].ret(ReturnIndex['name'])
+        JudgeTruth = False
+        return {
+                'type': void,
+                'const': JudgeTruth,
+                'name': RealReturnValue
+        }
+
+
+    #运算和表达式求值，类型转换相关函数
+    def assignConvert(self, CalcIndex, DType):
+        if (CalcIndex['type'] == DType):
+            return CalcIndex
+        if self.isInteger(CalcIndex['type']) and self.isInteger(DType):
+            if (CalcIndex['type'] == int1):
+                CalcIndex = self.convertIIZ(CalcIndex, DType)
+            else:
+                CalcIndex = self.convertIIS(CalcIndex, DType)
+        elif self.isInteger(CalcIndex['type']) and DType == double:
+            CalcIndex = self.convertIDS(CalcIndex)
+        elif self.isInteger(DType) and CalcIndex['type'] == double:
+            CalcIndex = self.convertDIS(CalcIndex)
+        return CalcIndex
+    
+    def convertIIZ(self, CalcIndex, DType):
+        Builder = self.Builders[-1]
+        ConfirmedVal = Builder.zext(CalcIndex['name'], DType)
+        JudgeReg = False
+        return {
+                'type': DType,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    def convertIIS(self, CalcIndex, DType):
+        Builder = self.Builders[-1]
+        ConfirmedVal = Builder.sext(CalcIndex['name'], DType)
+        JudgeReg = False
+        return {
+                'type': DType,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    def convertDIS(self, CalcIndex, DType):
+        Builder = self.Builders[-1]
+        ConfirmedVal = Builder.fptosi(CalcIndex['name'], DType)
+        JudgeReg = False
+        return {
+                'type': DType,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    def convertDIU(self, CalcIndex, DType):
+        Builder = self.Builders[-1]
+        ConfirmedVal = Builder.fptoui(CalcIndex['name'], DType)
+        JudgeReg = False
+        return {
+                'type': DType,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    def convertIDS(self, CalcIndex):
+        Builder = self.Builders[-1]
+        ConfirmedVal = Builder.sitofp(CalcIndex['name'], double)
+        JudgeReg = False
+        return {
+                'type': double,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    def convertIDU(self, CalcIndex):
+        Builder = self.Builders[-1]
+        JudgeReg = False
+        ConfirmedVal = Builder.uitofp(CalcIndex['name'], double)
+        return {
+                'type': double,
+                'const': JudgeReg,
+                'name': ConfirmedVal
+        }
+
+    # 类型转换至布尔型
+    def toBoolean(self, ManipulateIndex, notFlag = True):
+        Builder = self.Builders[-1]
+        if notFlag:
+            OperationChar = '=='
+        else:
+            OperationChar = '!='
+        if ManipulateIndex['type'] == int8 or ManipulateIndex['type'] == int32:
+            RealReturnValue = Builder.icmp_signed(OperationChar, ManipulateIndex['name'], ir.Constant(ManipulateIndex['type'], 0))
+            return {
+                    'tpye': int1,
+                    'const': False,
+                    'name': RealReturnValue
+            }
+        elif ManipulateIndex['type'] == double:
+            RealReturnValue = Builder.fcmp_ordered(OperationChar, ManipulateIndex['name'], ir.Constant(double, 0))
+            return {
+                    'tpye': int1,
+                    'const': False,
+                    'name': RealReturnValue
+            }
+        return ManipulateIndex
+
+    def visitNeg(self, tree):
+        '''
+        语法规则：expr :  op='!' expr
+        描述：非运算
+        返回：无
+        '''
+        RealReturnValue = self.visit(tree.getChild(1))
+        RealReturnValue = self.toBoolean(RealReturnValue, notFlag = True)
+        # res 未返回
+        return self.visitChildren(tree)
+
+
+    def visitOR(self, tree):
+        '''
+        语法规则：expr : expr '||' expr 
+        描述：或运算
+        返回：无
+        '''
+        Index1 = self.visit(tree.getChild(0))
+        Index1 = self.toBoolean(Index1, notFlag=False)
+        Index2 = self.visit(tree.getChild(2))
+        Index2 = self.toBoolean(Index2, notFlag=False)
+        Builder = self.Builders[-1]
+        RealReturnValue = Builder.or_(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': False,
+                'name': RealReturnValue
+        }
+
+    def visitAND(self, tree):
+        '''
+        语法规则：expr : expr '&&' expr 
+        描述：且运算
+        返回：无
+        '''
+        Index1 = self.visit(tree.getChild(0))
+        Index1 = self.toBoolean(Index1, notFlag=False)
+        Index2 = self.visit(tree.getChild(2))
+        Index2 = self.toBoolean(Index2, notFlag=False)
+        Builder = self.Builders[-1]
+        JudgeReg = False
+        RealReturnValue = Builder.and_(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
+
+
+    def visitIdentifier(self, tree):
+        '''
+        语法规则：expr : mID
+        描述：常数
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+
+    def visitParens(self, tree):
+        '''
+        语法规则：expr : '(' expr ')'
+        描述：括号
+        返回：无
+        '''
+        return self.visit(tree.getChild(1))
+
+
+    def visitArrayitem(self, tree):
+        '''
+        语法规则：expr : arrayItem 
+        描述：数组元素
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+
+    def visitString(self, tree):
+        '''
+        语法规则：expr : mSTRING
+        描述：字符串
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+
+    def isInteger(self, typ):
+        ReturnValue = 'width'
+        return hasattr(typ, ReturnValue)
+
+
+    def exprConvert(self, Index1, Index2):
+        if Index1['type'] == Index2['type']:
+            return Index1, Index2
+        if self.isInteger(Index1['type']) and self.isInteger(Index2['type']):
+            if Index1['type'].width < Index2['type'].width:
+                if Index1['type'].width == 1:
+                    Index1 = self.convertIIZ(Index1, Index2['type'])
+                else:
+                    Index1 = self.convertIIS(Index1, Index2['type'])
+            else:
+                if Index2['type'].width == 1:
+                    Index2 = self.convertIIZ(Index2, Index1['type'])
+                else:
+                    Index2 = self.convertIIS(Index2, Index1['type'])
+        elif self.isInteger(Index1['type']) and Index2['type'] == double:
+            Index1 = convertIDS(Index1, Index2['type'])
+        elif self.isInteger(Index2['type']) and Index1['type'] == double:
+            Index2 = convertIDS(Index2, Index1['type'])
+        else:
+            raise SemanticError(ctx=tree,msg="类型不匹配")
+        return Index1, Index2
+
+
+    def visitMulDiv(self, tree):
+        '''
+        语法规则：expr : expr op=('*' | '/' | '%') expr
+        描述：乘除
+        返回：无
+        '''
+        Builder = self.Builders[-1]
+        Index1 = self.visit(tree.getChild(0))
+        Index2 = self.visit(tree.getChild(2))
+        Index1, Index2 = self.exprConvert(Index1, Index2)
+        JudgeReg = False
+        if tree.getChild(1).getText() == '*':
+            RealReturnValue = Builder.mul(Index1['name'], Index2['name'])
+        elif tree.getChild(1).getText() == '/':
+            RealReturnValue = Builder.sdiv(Index1['name'], Index2['name'])
+        elif tree.getChild(1).getText() == '%':
+            RealReturnValue = Builder.srem(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
+
+
+    def visitAddSub(self, tree):
+        '''
+        语法规则：expr op=('+' | '-') expr 
+        描述：加减
+        返回：无
+        '''
+        Builder = self.Builders[-1]
+        Index1 = self.visit(tree.getChild(0))
+        Index2 = self.visit(tree.getChild(2))
+        Index1, Index2 = self.exprConvert(Index1, Index2)
+        JudgeReg = False
+        if tree.getChild(1).getText() == '+':
+            RealReturnValue = Builder.add(Index1['name'], Index2['name'])
+        elif tree.getChild(1).getText() == '-':
+            RealReturnValue = Builder.sub(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
+
+
+    def visitDouble(self, tree):
+        '''
+        语法规则：expr : (op='-')? mDOUBLE
+        描述：double类型
+        返回：无
+        '''
+        if tree.getChild(0).getText() == '-':
+            IndexMid = self.visit(tree.getChild(1))
+            Builder = self.Builders[-1]
+            RealReturnValue = Builder.neg(IndexMid['name'])
+            return {
+                    'type': IndexMid['type'],
+                    'name': RealReturnValue
+            }
+        return self.visit(tree.getChild(0))
+
+
+    def visitFunction(self, tree):
+        '''
+        语法规则：expr : func
+        描述：函数类型
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+
+    def visitChar(self, tree):
+        '''
+        语法规则：expr : mCHAR
+        描述：字符类型
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+
+    def visitInt(self, tree):
+        '''
+        语法规则：(op='-')? mINT
+        描述：int类型
+        返回：无
+        '''
+        if tree.getChild(0).getText() == '-':
+            IndexMid = self.visit(tree.getChild(1))
+            Builder = self.Builders[-1]
+            RealReturnValue = Builder.neg(IndexMid['name'])
+            return {
+                    'type': IndexMid['type'],
+                    'name': RealReturnValue
+            }
+        return self.visit(tree.getChild(0))
+
+
+    def visitMVoid(self, tree):
+        '''
+        语法规则：mVoid : 'void';
+        描述：void类型
+        返回：无
+        '''
+        return void
+
+    def visitMArray(self, tree):
+        '''
+        语法规则：mArray : mID '[' mINT ']'; 
+        描述：数组类型
+        返回：无
+        '''
+        return {
+            'IDname': tree.getChild(0).getText(),
+            'length': int(tree.getChild(2).getText())
+        }
+
+    def visitJudge(self, tree):
+        '''
+        语法规则：expr : expr op=('==' | '!=' | '<' | '<=' | '>' | '>=') expr
+        描述：比较
+        返回：无
+        '''
+        Builder = self.Builders[-1]
+        Index1 = self.visit(tree.getChild(0))
+        Index2 = self.visit(tree.getChild(2))
+        Index1, Index2 = self.exprConvert(Index1, Index2)
+        OperationChar = tree.getChild(1).getText()
+        JudgeReg = False
+        if Index1['type'] == double:
+            RealReturnValue = Builder.fcmp_ordered(OperationChar, Index1['name'], Index2['name'])
+        elif self.isInteger(Index1['type']):
+            RealReturnValue = Builder.icmp_signed(OperationChar, Index1['name'], Index2['name'])
+        return {
+                'type': int1,
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
+
+    #变量和变量类型相关函数
+    def visitMType(self, tree):
+        '''
+        语法规则：mType : 'int'| 'double'| 'char'| 'string';
+        描述：类型主函数
+        返回：无
+        '''
+        if tree.getText() == 'int':
+            return int32
+        if tree.getText() == 'char':
+            return int8
+        if tree.getText() == 'double':
+            return double
+        return void
+
+    def visitArrayItem(self, tree):
+        '''
+        语法规则：expr : arrayItem 
+        描述：数组元素
+        返回：无
+        '''
+        TempRequireLoad = self.WhetherNeedLoad
+        self.WhetherNeedLoad = False
+        res = self.visit(tree.getChild(0)) # mID
+        # print("res is", res)
+        JudgeReg = False
+        self.WhetherNeedLoad = TempRequireLoad
+        
+        if isinstance(res['type'], ir.types.ArrayType):
+            Builder = self.Builders[-1]
+
+            TempRequireLoad = self.WhetherNeedLoad
+            self.WhetherNeedLoad = True
+            IndexRe1 = self.visit(tree.getChild(2)) # subscript
+            self.WhetherNeedLoad = TempRequireLoad
+            
+            Int32Zero = ir.Constant(int32, 0)
+            RealReturnValue = Builder.gep(res['name'], [Int32Zero, IndexRe1['name']], inbounds=True)
+            if self.WhetherNeedLoad:
+                RealReturnValue = Builder.load(RealReturnValue)
+            return {
+                    'type': res['type'].element,
+                    'const': JudgeReg,
+                    'name': RealReturnValue,
+                    'struct_name': res['struct_name'] if 'struct_name' in res else None
+            }
+        else:   # error!
+            raise SemanticError(ctx=tree,msg="类型错误")
+
+    def visitArgument(self, tree):
+        '''
+        语法规则：argument : mINT | mDOUBLE | mCHAR | mSTRING;
+        描述：函数参数
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+    def visitMStruct(self, tree):
+        '''
+        语法规则：mStruct : 'struct' mID;
+        描述：结构体类型变量的使用
+        返回：无
+        '''
+        return self.Structure.List[tree.getChild(1).getText()]
+
+    def visitMID(self, tree):
+        '''
+        语法规则：mID : ID;
+        描述：ID
+        返回：无
+        '''
+        IDname = tree.getText()
+        JudgeReg = False
+        if self.SymbolTable.JudgeExist(IDname) != True:
+           return {
+                'type': int32,
+                'const': JudgeReg,
+                'name': ir.Constant(int32, None)
+            }
+        Builder = self.Builders[-1]
+        TheItem = self.SymbolTable.GetItem(IDname)
+        # print(TheItem)
+        if TheItem != None:
+            if self.WhetherNeedLoad:
+                ReturnValue = Builder.load(TheItem["Name"])
+                return {
+                    "type" : TheItem["Type"],
+                    "const" : JudgeReg,
+                    "name" : ReturnValue,
+                    "struct_name" : TheItem["StructName"] if "StructName" in TheItem else None
+                }
+            else:
+                return {
+                    "type" : TheItem["Type"],
+                    "const" : JudgeReg,
+                    "name" : TheItem["Name"],
+                    "struct_name" : TheItem["StructName"] if "StructName" in TheItem else None
+                }
+        else:
+            return {
+                'type': void,
+                'const': JudgeReg,
+                'name': ir.Constant(void, None)
+            }
+
+    def visitMINT(self, tree):
+        '''
+        语法规则：mINT : INT;
+        描述：int
+        返回：无
+        '''
+        JudgeReg = True
+        return {
+                'type': int32,
+                'const': JudgeReg,
+                'name': ir.Constant(int32, int(tree.getText()))
+        }
+
+    def visitMDOUBLE(self, tree):
+        '''
+        语法规则：mDOUBLE : DOUBLE;
+        描述：double
+        返回：无
+        '''
+        JudgeReg = True
+        return {
+                'type': double,
+                'const': JudgeReg,
+                'name': ir.Constant(double, float(tree.getText()))
+        }
+
+    def visitMCHAR(self, tree):
+        '''
+        语法规则：mCHAR : CHAR;
+        描述：char
+        返回：无
+        '''
+        JudgeReg = True
+        return {
+                'type': int8,
+                'const': JudgeReg,
+                'name': ir.Constant(int8, ord(tree.getText()[1]))
+        }
+
+    def visitMSTRING(self, tree):
+        '''
+        语法规则：mSTRING : STRING;
+        描述：string
+        返回：无
+        '''
+        MarkIndex = self.Constants
+        self.Constants += 1
+        ProcessIndex = tree.getText().replace('\\n', '\n')
+        ProcessIndex = ProcessIndex[1:-1]
+        ProcessIndex += '\0'
+        Len = len(bytearray(ProcessIndex, 'utf-8'))
+        JudgeReg = False
+        RealReturnValue = ir.GlobalVariable(self.Module, ir.ArrayType(int8, Len), ".str%d"%MarkIndex)
+        RealReturnValue.global_constant = True
+        RealReturnValue.initializer = ir.Constant(ir.ArrayType(int8, Len), bytearray(ProcessIndex, 'utf-8'))
+        return {
+                'type': ir.ArrayType(int8, Len),
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
+
+    def save(self, filename):
+        """
+        保存到文件
+        描述：文件名含后缀
+        返回：无
+        """
+        with open(filename, "w") as f:
+            f.write(repr(self.Module))
+
+def generate(input_filename, output_filename):
+    """
+    将C代码文件转成IR代码文件
+    :param input_filename: C代码文件
+    :param output_filename: IR代码文件
+    :return: 生成是否成功
+    """
+    lexer = simpleCLexer(FileStream(input_filename))
+    stream = CommonTokenStream(lexer)
+    parser = simpleCParser(stream)
+    parser.removeErrorListeners()
+    errorListener = syntaxErrorListener()
+    parser.addErrorListener(errorListener)
+
+    tree = parser.prog()
+    v = Visitor()
+    v.visit(tree)
+    v.save(output_filename)
+
+#del simpleCParser
