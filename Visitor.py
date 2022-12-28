@@ -81,7 +81,7 @@ class Visitor:
             self.visit(tree.getChild(i))
 
     #函数相关函数
-    def visitMFunction(self, tree):
+    def visit_functionDefine(self, tree):
 
         '''
         语法规则：mFunction : (mType|mVoid|mStruct) mID '(' params ')' '{' funcBody '}';
@@ -147,7 +147,7 @@ class Visitor:
         self.SymbolTable.QuitScope()
         return
 
-    def visitParams(self, tree):
+    def visit_params(self, tree):
         '''
         语法规则：params : param (','param)* |;
         描述：函数的参数列表
@@ -164,7 +164,7 @@ class Visitor:
             i += 2
         return ParameterList
 
-    def visitParam(self, tree):
+    def visit_param(self, tree):
         '''
         语法规则：param : mType mID;
         描述：返回函数参数
@@ -175,7 +175,7 @@ class Visitor:
         Result = {'type': Type, 'IDname': IDname}
         return Result
 
-    def visitFuncBody(self, tree):
+    def visit_funcBody(self, tree):
         '''
         语法规则：funcBody : body returnBlock;
         描述：函数体
@@ -187,7 +187,7 @@ class Visitor:
         self.SymbolTable.QuitScope()
         return
 
-    def visitBody(self, tree):
+    def visit_body(self, tree):
         '''
         语法规则：body : (block | func';')*;
         描述：语句块/函数块
@@ -199,175 +199,8 @@ class Visitor:
                 break
         return
 
-    #调用函数相关函数
-    def visitFunc(self, tree):
-        '''
-        语法规则：func : (strlenFunc | atoiFunc | printfFunc | scanfFunc | getsFunc | selfDefinedFunc);
-        描述：函数
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-    def visitStrlenFunc(self, tree):
-        '''
-        语法规则：strlenFunc : 'strlen' '(' mID ')';
-        描述：strlen函数
-        返回：函数返回值
-        '''
-        if 'strlen' in self.Functions:
-            strlen = self.Functions['strlen']
-        else:
-            strlenType = ir.FunctionType(int32, [ir.PointerType(int8)], var_arg = False)
-            strlen = ir.Function(self.Module, strlenType, name = "strlen")
-            self.Functions['strlen'] = strlen
-
-        TheBuilder = self.Builders[-1]
-        zero = ir.Constant(int32, 0)
-
-        #加载变量
-        PreviousNeedLoad = self.WhetherNeedLoad
-        self.WhetherNeedLoad = False
-        res = self.visit(tree.getChild(2))
-        self.WhetherNeedLoad = PreviousNeedLoad
-
-        Arguments = TheBuilder.gep(res['name'], [zero, zero], inbounds = True)
-        ReturnVariableName = TheBuilder.call(strlen, [Arguments])
-
-        Result = {'type': int32, 'name': ReturnVariableName}
-        return Result
-
-    def visitPrintfFunc(self, tree):
-        '''
-        语法规则：printfFunc : 'printf' '(' (mSTRING | mID) (','expr)* ')';
-        描述：printf函数
-        返回：函数返回值
-        '''        
-        if 'printf' in self.Functions:
-            printf = self.Functions['printf']
-        else:
-            printfType = ir.FunctionType(int32, [ir.PointerType(int8)], var_arg = True)
-            printf = ir.Function(self.Module, printfType, name = "printf")
-            self.Functions['printf'] = printf
-
-        TheBuilder = self.Builders[-1]
-        zero = ir.Constant(int32, 0)
-
-        #就一个变量
-        if tree.getChildCount() == 4:
-            ParameterInfo = self.visit(tree.getChild(2)) 
-            Argument = TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)
-            ReturnVariableName = TheBuilder.call(printf, [Argument])
-        else:
-            ParameterInfo = self.visit(tree.getChild(2))
-            Arguments = [TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)]
-
-            Length = tree.getChildCount()
-            i = 4
-            while i < Length - 1:
-                OneParameter = self.visit(tree.getChild(i))
-                Arguments.append(OneParameter['name'])
-                i += 2
-            ReturnVariableName = TheBuilder.call(printf, Arguments)
-        Result = {'type': int32, 'name': ReturnVariableName}
-        return Result
-
-
-    def visitScanfFunc(self, tree):
-        '''
-        语法规则：scanfFunc : 'scanf' '(' mSTRING (','('&')?(mID|arrayItem|structMember))* ')';
-        描述：scanf函数
-        返回：函数返回值
-        '''        
-        if 'scanf' in self.Functions:
-            scanf = self.Functions['scanf']
-        else:
-            scanfType = ir.FunctionType(int32, [ir.PointerType(int8)], var_arg = True)
-            scanf = ir.Function(self.Module, scanfType, name="scanf")
-            self.Functions['scanf'] = scanf
-
-        TheBuilder = self.Builders[-1]
-        zero = ir.Constant(int32, 0)
-        ParameterList = self.visit(tree.getChild(2)) # MString
-        Arguments = [TheBuilder.gep(ParameterList['name'], [zero, zero], inbounds = True)]
-
-        Length = tree.getChildCount()
-        i = 4
-        while i < Length - 1:
-            if tree.getChild(i).getText() == '&':
-                #读取变量
-                PreviousNeedLoad = self.WhetherNeedLoad
-                self.WhetherNeedLoad = False
-                TheParameter = self.visit(tree.getChild(i + 1))
-                self.WhetherNeedLoad = PreviousNeedLoad
-                Arguments.append(TheParameter['name'])
-                i += 3
-            else:
-                PreviousNeedLoad = self.WhetherNeedLoad
-                self.WhetherNeedLoad = True
-                TheParameter = self.visit(tree.getChild(i))
-                self.WhetherNeedLoad = PreviousNeedLoad
-                Arguments.append(TheParameter['name'])
-                i += 2
-
-        ReturnVariableName = TheBuilder.call(scanf, Arguments)
-        Result = {'type': int32, 'name': ReturnVariableName}
-        return Result
-
-
-    def visitGetsFunc(self, tree):
-        '''
-        语法规则：getsFunc : 'gets' '(' mID ')';
-        描述：gets函数
-        返回：函数返回值
-        '''        
-        if 'gets' in self.Functions:
-            gets = self.Functions['gets']
-        else:
-            getsType = ir.FunctionType(int32, [], var_arg = True)
-            gets = ir.Function(self.Module, getsType, name = "gets")
-            self.Functions['gets'] = gets
-
-        TheBuilder = self.Builders[-1]
-        zero = ir.Constant(int32, 0)
-
-        PreviousNeedLoad = self.WhetherNeedLoad
-        self.WhetherNeedLoad = False
-        ParameterInfo = self.visit(tree.getChild(2))
-        self.WhetherNeedLoad = PreviousNeedLoad
-
-        Arguments = [TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)]
-        ReturnVariableName = TheBuilder.call(gets, Arguments)
-        Result = {'type': int32, 'name': ReturnVariableName}
-        return Result
-
-
-    def visitSelfDefinedFunc(self, tree):
-        '''
-        语法规则：selfDefinedFunc : mID '('((argument|mID)(','(argument|mID))*)? ')';
-        描述：自定义函数
-        返回：函数返回值
-        '''
-        TheBuilder = self.Builders[-1]
-        FunctionName = tree.getChild(0).getText() # func name
-        if FunctionName in self.Functions:
-            TheFunction = self.Functions[FunctionName]
-
-            Length = tree.getChildCount()
-            ParameterList = []
-            i = 2
-            while i < Length - 1:
-                TheParameter = self.visit(tree.getChild(i))
-                TheParameter = self.assignConvert(TheParameter, TheFunction.args[i // 2 - 1].type)
-                ParameterList.append(TheParameter['name'])
-                i += 2
-            ReturnVariableName = TheBuilder.call(TheFunction, ParameterList)
-            Result = {'type': TheFunction.function_type.return_type, 'name': ReturnVariableName}
-            return Result
-        else:
-            raise SemanticError(ctx=tree,msg="函数未定义！")
-
     #语句块相关函数
-    def visitBlock(self, tree):
+    def visit_blocks(self, tree):
         '''
         语法规则：block : initialBlock | arrayInitBlock | structInitBlock | assignBlock | ifBlocks | whileBlock | forBlock | returnBlock;
         描述：语句块
@@ -377,7 +210,7 @@ class Visitor:
             self.visit(tree.getChild(i))
         return
 
-    def visitInitialBlock(self, tree):
+    def visit_initialBlock(self, tree):
         '''
         语法规则：initialBlock : (mType) mID ('=' expr)? (',' mID ('=' expr)?)* ';';
         描述：初始化语句块
@@ -420,7 +253,7 @@ class Visitor:
                 i += 4
         return
 
-    def visitArrayInitBlock(self, tree):
+    def visit_arrayInitBlock(self, tree):
         '''
         语法规则：arrayInitBlock : mType mID '[' mINT ']'';'; 
         描述：数组初始化块
@@ -446,7 +279,7 @@ class Visitor:
             raise SemanticError(ctx=tree,msg=TheResult["reason"])
         return
 
-    def visitAssignBlock(self, tree):
+    def visit_assignBlock(self, tree):
         '''
         语法规则：assignBlock : ((arrayItem|mID|structMember) '=')+  expr ';';
         描述：赋值语句块
@@ -479,8 +312,7 @@ class Visitor:
             i += 2
         return Result
 
-    #TODO
-    def visitCondition(self, tree):
+    def visit_condition(self, tree):
         '''
         语法规则：condition :  expr;
         描述：判断条件
@@ -489,7 +321,7 @@ class Visitor:
         result = self.visit(tree.getChild(0))
         return self.toBoolean(result, notFlag=False)
 
-    def visitIfBlocks(self, tree):
+    def visit_ifBlocks(self, tree):
         '''
         语法规则：ifBlocks : ifBlock (elifBlock)* (elseBlock)?;
         描述：if语句块
@@ -525,7 +357,7 @@ class Visitor:
         return
 
 
-    def visitIfBlock(self, tree):
+    def visit_ifBlock(self, tree):
         '''
         语法规则：ifBlock : 'if' '(' condition ')' '{' body '}';
         描述：单一if语句块
@@ -560,7 +392,7 @@ class Visitor:
         return
 
 
-    def visitElifBlock(self, tree):
+    def visit_elifBlock(self, tree):
         '''
         语法规则：elifBlock : 'else' 'if' '(' condition ')' '{' body '}';
         描述：单一elseif语句块
@@ -594,7 +426,7 @@ class Visitor:
         self.SymbolTable.QuitScope()
         return
 
-    def visitElseBlock(self, tree):
+    def visit_elseBlock(self, tree):
         '''
         语法规则：elseBlock : 'else' '{' body '}';
         描述：单一else语句块
@@ -606,50 +438,7 @@ class Visitor:
         self.SymbolTable.QuitScope()
         return
 
-    def visitWhileBlock(self, tree):
-        '''
-        语法规则：whileBlock : 'while' '(' condition ')' '{' body '}';
-        描述：while语句块
-        返回：无
-        '''
-        self.SymbolTable.EnterScope()
-        TheBuilder = self.Builders[-1]
-        #while语句分为三个分块
-        WhileCondition = TheBuilder.append_basic_block()
-        WhileBody = TheBuilder.append_basic_block()
-        WhileEnd = TheBuilder.append_basic_block()
-
-        #首先执行Condition分块
-        TheBuilder.branch(WhileCondition)
-        self.Blocks.pop()
-        self.Builders.pop()
-        self.Blocks.append(WhileCondition)
-        self.Builders.append(ir.IRBuilder(WhileCondition))
-        
-        #根据condition结果决定执行body还是结束while循环
-        result = self.visit(tree.getChild(2)) # condition
-        self.Builders[-1].cbranch(result['name'], WhileBody, WhileEnd)
-        
-        #执行body
-        self.Blocks.pop()
-        self.Builders.pop()
-        self.Blocks.append(WhileBody)
-        self.Builders.append(ir.IRBuilder(WhileBody))
-        self.visit(tree.getChild(5)) # body
-
-        #执行body后重新判断condition
-        self.Builders[-1].branch(WhileCondition)
-
-        #结束while循环
-        self.Blocks.pop()
-        self.Builders.pop()
-        self.Blocks.append(WhileEnd)
-        self.Builders.append(ir.IRBuilder(WhileEnd))
-        self.SymbolTable.QuitScope()
-        return
-
-
-    def visitForBlock(self, tree):
+    def visit_forBlock(self, tree):
         '''
         语法规则：forBlock : 'for' '(' for1Block  ';' condition ';' for3Block ')' ('{' body '}'|';');
         描述：for语句块
@@ -698,7 +487,7 @@ class Visitor:
         self.SymbolTable.QuitScope()
         return
 
-    def visitFor1Block(self, tree):
+    def visit_for1Block(self, tree):
         '''
         语法规则：for1Block :  mID '=' expr (',' for1Block)?|;
         描述：for语句块的第一个参数
@@ -724,7 +513,7 @@ class Visitor:
         return
 
 
-    def visitFor3Block(self, tree):
+    def visit_for3Block(self, tree):
         '''
         语法规则：for3Block : mID '=' expr (',' for3Block)?|;
         描述：for语句块的第三个参数
@@ -748,7 +537,7 @@ class Visitor:
         return
 
 
-    def visitReturnBlock(self, tree):
+    def visit_returnBlock(self, tree):
         '''
         语法规则：returnBlock : 'return' (mINT|mID)? ';';
         描述：return语句块
@@ -873,97 +662,11 @@ class Visitor:
             }
         return ManipulateIndex
 
-    def visitNeg(self, tree):
-        '''
-        语法规则：expr :  op='!' expr
-        描述：非运算
-        返回：无
-        '''
-        RealReturnValue = self.visit(tree.getChild(1))
-        RealReturnValue = self.toBoolean(RealReturnValue, notFlag = True)
-        # res 未返回
-        return self.visitChildren(tree)
-
-
-    def visitOR(self, tree):
-        '''
-        语法规则：expr : expr '||' expr 
-        描述：或运算
-        返回：无
-        '''
-        Index1 = self.visit(tree.getChild(0))
-        Index1 = self.toBoolean(Index1, notFlag=False)
-        Index2 = self.visit(tree.getChild(2))
-        Index2 = self.toBoolean(Index2, notFlag=False)
-        Builder = self.Builders[-1]
-        RealReturnValue = Builder.or_(Index1['name'], Index2['name'])
-        return {
-                'type': Index1['type'],
-                'const': False,
-                'name': RealReturnValue
-        }
-
-    def visitAND(self, tree):
-        '''
-        语法规则：expr : expr '&&' expr 
-        描述：且运算
-        返回：无
-        '''
-        Index1 = self.visit(tree.getChild(0))
-        Index1 = self.toBoolean(Index1, notFlag=False)
-        Index2 = self.visit(tree.getChild(2))
-        Index2 = self.toBoolean(Index2, notFlag=False)
-        Builder = self.Builders[-1]
-        JudgeReg = False
-        RealReturnValue = Builder.and_(Index1['name'], Index2['name'])
-        return {
-                'type': Index1['type'],
-                'const': JudgeReg,
-                'name': RealReturnValue
-        }
-
-
-    def visitIdentifier(self, tree):
-        '''
-        语法规则：expr : mID
-        描述：常数
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-
-    def visitParens(self, tree):
-        '''
-        语法规则：expr : '(' expr ')'
-        描述：括号
-        返回：无
-        '''
-        return self.visit(tree.getChild(1))
-
-
-    def visitArrayitem(self, tree):
-        '''
-        语法规则：expr : arrayItem 
-        描述：数组元素
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-
-    def visitString(self, tree):
-        '''
-        语法规则：expr : mSTRING
-        描述：字符串
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-
     def isInteger(self, typ):
         ReturnValue = 'width'
         return hasattr(typ, ReturnValue)
 
-
+# TODO: SemanticError
     def exprConvert(self, Index1, Index2):
         if Index1['type'] == Index2['type']:
             return Index1, Index2
@@ -979,15 +682,64 @@ class Visitor:
                 else:
                     Index2 = self.convertIIS(Index2, Index1['type'])
         elif self.isInteger(Index1['type']) and Index2['type'] == double:
-            Index1 = convertIDS(Index1, Index2['type'])
+            Index1 = self.convertIDS(Index1, Index2['type'])
         elif self.isInteger(Index2['type']) and Index1['type'] == double:
-            Index2 = convertIDS(Index2, Index1['type'])
+            Index2 = self.convertIDS(Index2, Index1['type'])
         else:
             raise SemanticError(ctx=tree,msg="类型不匹配")
         return Index1, Index2
 
+    def visit_expr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 2:
+            nodetype = tree.getChild(0).type
+            if nodetype == 'Minus':
+                ReturnValue = self.visit_MinusLiteral(tree)
+            elif nodetype == 'Not':
+                ReturnValue = self.visit_Not(tree)
+        elif chs == 3:
+            nodetype = tree.getChild(0).type
+            if nodetype in {'Star', 'Div', 'Mod'}:
+                ReturnValue = self.visit_MulDiv(tree)
+            elif nodetype in {'Plus', 'Minus'}:
+                ReturnValue = self.visit_AddSub(tree)
+            elif nodetype in {'Equal', 'NotEqual', 'Less',
+             'Greater', 'LessEqual', 'GreaterEqual'}:
+                ReturnValue = self.visit_relop(tree)
+            elif nodetype == 'AndAnd':
+                ReturnValue = self.visit_AndAnd(tree)
+            elif nodetype == 'OrOr':
+                ReturnValue = self.visit_OrOr(tree)
+            elif nodetype == 'LeftParen':
+                ReturnValue = self.visit_Parens(tree)
+        else:
+            # raise error
+            pass
 
-    def visitMulDiv(self, tree):
+        return ReturnValue
+
+    def visit_Parens(self, tree):
+        '''
+        语法规则：expr : '(' expr ')'
+        描述：括号
+        返回：无
+        '''
+        return self.visit(tree.getChild(1))
+
+    def visit_Not(self, tree):
+        '''
+        语法规则：expr :  op='!' expr
+        描述：非运算
+        返回：无
+        '''
+        RealReturnValue = self.visit(tree.getChild(1))
+        RealReturnValue = self.toBoolean(RealReturnValue, notFlag = True)
+        # res 未返回
+        return self.visitChildren(tree)
+
+    def visit_MulDiv(self, tree):
         '''
         语法规则：expr : expr op=('*' | '/' | '%') expr
         描述：乘除
@@ -1011,7 +763,7 @@ class Visitor:
         }
 
 
-    def visitAddSub(self, tree):
+    def visit_AddSub(self, tree):
         '''
         语法规则：expr op=('+' | '-') expr 
         描述：加减
@@ -1033,44 +785,10 @@ class Visitor:
         }
 
 
-    def visitDouble(self, tree):
+# Minus
+    def visit_MinusLiteral(self, tree):
         '''
-        语法规则：expr : (op='-')? mDOUBLE
-        描述：double类型
-        返回：无
-        '''
-        if tree.getChild(0).getText() == '-':
-            IndexMid = self.visit(tree.getChild(1))
-            Builder = self.Builders[-1]
-            RealReturnValue = Builder.neg(IndexMid['name'])
-            return {
-                    'type': IndexMid['type'],
-                    'name': RealReturnValue
-            }
-        return self.visit(tree.getChild(0))
-
-
-    def visitFunction(self, tree):
-        '''
-        语法规则：expr : func
-        描述：函数类型
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-
-    def visitChar(self, tree):
-        '''
-        语法规则：expr : mCHAR
-        描述：字符类型
-        返回：无
-        '''
-        return self.visit(tree.getChild(0))
-
-
-    def visitInt(self, tree):
-        '''
-        语法规则：(op='-')? mINT
+        语法规则：(op='-')? (mINT|mDOUBLE)
         描述：int类型
         返回：无
         '''
@@ -1085,15 +803,45 @@ class Visitor:
         return self.visit(tree.getChild(0))
 
 
-    def visitMVoid(self, tree):
+    def visit_AndAnd(self, tree):
         '''
-        语法规则：mVoid : 'void';
-        描述：void类型
+        语法规则：expr : expr '&&' expr 
+        描述：且运算
         返回：无
         '''
-        return void
+        Index1 = self.visit(tree.getChild(0))
+        Index1 = self.toBoolean(Index1, notFlag=False)
+        Index2 = self.visit(tree.getChild(2))
+        Index2 = self.toBoolean(Index2, notFlag=False)
+        Builder = self.Builders[-1]
+        JudgeReg = False
+        RealReturnValue = Builder.and_(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': JudgeReg,
+                'name': RealReturnValue
+        }
 
-    def visitMArray(self, tree):
+    def visit_OrOr(self, tree):
+        '''
+        语法规则：expr : expr '||' expr 
+        描述：或运算
+        返回：无
+        '''
+        Index1 = self.visit(tree.getChild(0))
+        Index1 = self.toBoolean(Index1, notFlag=False)
+        Index2 = self.visit(tree.getChild(2))
+        Index2 = self.toBoolean(Index2, notFlag=False)
+        Builder = self.Builders[-1]
+        RealReturnValue = Builder.or_(Index1['name'], Index2['name'])
+        return {
+                'type': Index1['type'],
+                'const': False,
+                'name': RealReturnValue
+        }
+
+
+    def visit_arrayItem(self, tree):
         '''
         语法规则：mArray : mID '[' mINT ']'; 
         描述：数组类型
@@ -1104,7 +852,7 @@ class Visitor:
             'length': int(tree.getChild(2).getText())
         }
 
-    def visitJudge(self, tree):
+    def visit_relop(self, tree):
         '''
         语法规则：expr : expr op=('==' | '!=' | '<' | '<=' | '>' | '>=') expr
         描述：比较
@@ -1127,20 +875,21 @@ class Visitor:
         }
 
     #变量和变量类型相关函数
-    def visitMType(self, tree):
+    def visit_typeDef(self, tree):
         '''
         语法规则：mType : 'int'| 'double'| 'char'| 'string';
         描述：类型主函数
         返回：无
         '''
-        if tree.getText() == 'int':
+        if tree.getText() == 'Int':
             return int32
-        if tree.getText() == 'char':
+        if tree.getText() == 'Char':
             return int8
-        if tree.getText() == 'double':
+        if tree.getText() == 'Double':
             return double
         return void
 
+# TODO: wtf is this
     def visitArrayItem(self, tree):
         '''
         语法规则：expr : arrayItem 
@@ -1175,7 +924,133 @@ class Visitor:
         else:   # error!
             raise SemanticError(ctx=tree,msg="类型错误")
 
-    def visitArgument(self, tree):
+#调用函数相关函数
+    def visit_func(self, tree):
+        '''
+        语法规则：func : (strlenFunc | atoiFunc | printfFunc | scanfFunc | getsFunc | selfDefinedFunc);
+        描述：函数
+        返回：无
+        '''
+        return self.visit(tree.getChild(0))
+
+    def visit_strlenRef(self, tree):
+        '''
+        语法规则：strlenFunc : 'strlen' '(' mID ')';
+        描述：strlen函数
+        返回：函数返回值
+        '''
+        if 'strlen' in self.Functions:
+            strlen = self.Functions['strlen']
+        else:
+            strlenType = ir.FunctionType(int32, [ir.PointerType(int8)], var_arg = False)
+            strlen = ir.Function(self.Module, strlenType, name = "strlen")
+            self.Functions['strlen'] = strlen
+
+        TheBuilder = self.Builders[-1]
+        zero = ir.Constant(int32, 0)
+
+        #加载变量
+        PreviousNeedLoad = self.WhetherNeedLoad
+        self.WhetherNeedLoad = False
+        res = self.visit(tree.getChild(2))
+        self.WhetherNeedLoad = PreviousNeedLoad
+
+        Arguments = TheBuilder.gep(res['name'], [zero, zero], inbounds = True)
+        ReturnVariableName = TheBuilder.call(strlen, [Arguments])
+
+        Result = {'type': int32, 'name': ReturnVariableName}
+        return Result
+
+    def visit_printfRef(self, tree):
+        '''
+        语法规则：printfFunc : 'printf' '(' (mSTRING | mID) (','expr)* ')';
+        描述：printf函数
+        返回：函数返回值
+        '''        
+        if 'printf' in self.Functions:
+            printf = self.Functions['printf']
+        else:
+            printfType = ir.FunctionType(int32, [ir.PointerType(int8)], var_arg = True)
+            printf = ir.Function(self.Module, printfType, name = "printf")
+            self.Functions['printf'] = printf
+
+        TheBuilder = self.Builders[-1]
+        zero = ir.Constant(int32, 0)
+
+        #就一个变量
+        if tree.getChildCount() == 4:
+            ParameterInfo = self.visit(tree.getChild(2)) 
+            Argument = TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)
+            ReturnVariableName = TheBuilder.call(printf, [Argument])
+        else:
+            ParameterInfo = self.visit(tree.getChild(2))
+            Arguments = [TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)]
+
+            Length = tree.getChildCount()
+            i = 4
+            while i < Length - 1:
+                OneParameter = self.visit(tree.getChild(i))
+                Arguments.append(OneParameter['name'])
+                i += 2
+            ReturnVariableName = TheBuilder.call(printf, Arguments)
+        Result = {'type': int32, 'name': ReturnVariableName}
+        return Result
+
+
+    def visit_getsRef(self, tree):
+        '''
+        语法规则：getsFunc : 'gets' '(' mID ')';
+        描述：gets函数
+        返回：函数返回值
+        '''        
+        if 'gets' in self.Functions:
+            gets = self.Functions['gets']
+        else:
+            getsType = ir.FunctionType(int32, [], var_arg = True)
+            gets = ir.Function(self.Module, getsType, name = "gets")
+            self.Functions['gets'] = gets
+
+        TheBuilder = self.Builders[-1]
+        zero = ir.Constant(int32, 0)
+
+        PreviousNeedLoad = self.WhetherNeedLoad
+        self.WhetherNeedLoad = False
+        ParameterInfo = self.visit(tree.getChild(2))
+        self.WhetherNeedLoad = PreviousNeedLoad
+
+        Arguments = [TheBuilder.gep(ParameterInfo['name'], [zero, zero], inbounds = True)]
+        ReturnVariableName = TheBuilder.call(gets, Arguments)
+        Result = {'type': int32, 'name': ReturnVariableName}
+        return Result
+
+
+    def visit_funcRef(self, tree):
+        '''
+        语法规则：selfDefinedFunc : mID '('((argument|mID)(','(argument|mID))*)? ')';
+        描述：自定义函数
+        返回：函数返回值
+        '''
+        TheBuilder = self.Builders[-1]
+        FunctionName = tree.getChild(0).getText() # func name
+        if FunctionName in self.Functions:
+            TheFunction = self.Functions[FunctionName]
+
+            Length = tree.getChildCount()
+            ParameterList = []
+            i = 2
+            while i < Length - 1:
+                TheParameter = self.visit(tree.getChild(i))
+                TheParameter = self.assignConvert(TheParameter, TheFunction.args[i // 2 - 1].type)
+                ParameterList.append(TheParameter['name'])
+                i += 2
+            ReturnVariableName = TheBuilder.call(TheFunction, ParameterList)
+            Result = {'type': TheFunction.function_type.return_type, 'name': ReturnVariableName}
+            return Result
+        else:
+            raise SemanticError(ctx=tree,msg="函数未定义！")
+
+
+    def visit_literal(self, tree):
         '''
         语法规则：argument : mINT | mDOUBLE | mCHAR | mSTRING;
         描述：函数参数
@@ -1183,15 +1058,7 @@ class Visitor:
         '''
         return self.visit(tree.getChild(0))
 
-    def visitMStruct(self, tree):
-        '''
-        语法规则：mStruct : 'struct' mID;
-        描述：结构体类型变量的使用
-        返回：无
-        '''
-        return self.Structure.List[tree.getChild(1).getText()]
-
-    def visitMID(self, tree):
+    def visit_Identifier(self, tree):
         '''
         语法规则：mID : ID;
         描述：ID
@@ -1231,7 +1098,8 @@ class Visitor:
                 'name': ir.Constant(void, None)
             }
 
-    def visitMINT(self, tree):
+    # TODO: tree.getText()?
+    def visit_IntegerLiteral(self, tree):
         '''
         语法规则：mINT : INT;
         描述：int
@@ -1244,7 +1112,8 @@ class Visitor:
                 'name': ir.Constant(int32, int(tree.getText()))
         }
 
-    def visitMDOUBLE(self, tree):
+    # TODO: tree.getText()?
+    def visit_FloatingLiteral(self, tree):
         '''
         语法规则：mDOUBLE : DOUBLE;
         描述：double
@@ -1257,7 +1126,8 @@ class Visitor:
                 'name': ir.Constant(double, float(tree.getText()))
         }
 
-    def visitMCHAR(self, tree):
+    # TODO: tree.getText()?
+    def visit_CharacterLiteral(self, tree):
         '''
         语法规则：mCHAR : CHAR;
         描述：char
@@ -1270,7 +1140,8 @@ class Visitor:
                 'name': ir.Constant(int8, ord(tree.getText()[1]))
         }
 
-    def visitMSTRING(self, tree):
+    # TODO: tree.getText()?
+    def visit_StringLiteral(self, tree):
         '''
         语法规则：mSTRING : STRING;
         描述：string
