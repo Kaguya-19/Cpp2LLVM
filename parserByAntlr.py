@@ -18,14 +18,10 @@ def toDict(tree):
 
 def main(argv=sys.argv):
     lexer = CPP14Lexer(StdinStream())
-    stream = CommonTokenStream(lexer)
-    
-    for token in stream.tokens:
-        print(token)
-    
+    stream = CommonTokenStream(lexer)    
     # parser = CPP14Parser(stream)
     parser = myParser(stream)
-    tree = parser.translationUnit()
+    tree = parser.translation_unit()
     dictTree = toDict(tree)
     import json
     file_name = 'tree.json'
