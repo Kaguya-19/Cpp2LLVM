@@ -79,12 +79,11 @@ expr
     | Minus? FloatingLiteral          
     | CharacterLiteral                       
     | StringLiteral                       
-    | Identifier                         
+    | Identifier
+    | arrayItem                         
     | func;
 
 typeDef : Int| Double | Char;
-
-arrayRef : Identifier  LeftBracket  IntegerLiteral  RightBracket ; 
 
 arrayItem : Identifier  LeftBracket  expr  RightBracket ;
 

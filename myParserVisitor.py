@@ -114,11 +114,6 @@ class myParserVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by myParser#arrayRef.
-    def visitArrayRef(self, ctx:myParser.ArrayRefContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by myParser#arrayItem.
     def visitArrayItem(self, ctx:myParser.ArrayItemContext):
         return self.visitChildren(ctx)
