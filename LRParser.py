@@ -604,12 +604,16 @@ class ParserTree:
         def __str__(self):
             return json.dumps(self.__dict__(),indent=1)
         
+        def getText(self):
+            return self.value
+        
         def delStar(self):
             change = False
             if self.children:
                 for child in self.children:
                     type = child.type
-                    if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or'):
+                    if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or')\
+                        or type in {'HexidecimalLiteral','DecimalLiteral','OctalLiteral','BinaryLiteral'}:
                         self.children.remove(child)
                         change = True
                         self.children.extend(child.children)
@@ -662,7 +666,6 @@ class ParserTree:
     
     def getChildCount(self):
         return len(self.current_node.children)
-        
         
         
 if __name__ == '__main__':

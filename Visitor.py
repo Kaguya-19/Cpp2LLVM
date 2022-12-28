@@ -62,57 +62,16 @@ class Visitor:
         self.visit_node(tree)
 
     def visit_node(self, tree):
-        # TODO:
-        type = tree.current_node.type
-        if type == 'Prog':
-            self.visitProg(tree)
-        elif type == 'MFunction':
-            self.visitMFunction(tree)
-        elif type == 'Params':
-            self.visitParams(tree)
-        elif type == 'Param':
-            self.visitParam(tree)
-        elif type == 'FuncBody':
-            self.visitFuncBody(tree)
-        elif type == 'Body':
-            self.visitBody(tree)
-        elif type == 'Func':
-            self.visitFunc(tree)
-        elif type == 'StrlenFunc':
-            self.visitStrlenFunc(tree)
-        elif type == 'PrintfFunc':
-            self.visitPrintfFunc(tree)
-        elif type == 'ScanfFunc':
-            self.visitScanfFunc(tree)
-        elif type == 'GetsFunc':
-            self.visitGetsFunc(tree)
-        elif type == 'SelfDefinedFunc':
-            self.visitSelfDefinedFunc(tree)
-        elif type == 'Block':
-            self.visitBlock(tree)
-        elif type == 'InitialBlock':
-            self.visitInitialBlock(tree)
-        elif type == 'ArrayInitBlock':
-            self.visitArrayInitBlock(tree)
-        elif type == 'AssignBlock':
-            self.visitAssignBlock(tree)
-        elif type == 'Condition':
-            self.visitCondition(tree)
-        elif type == 'IfBlocks':
-            self.visitIfBlocks(tree)
-        elif type == 'IfBlock':
-            self.visitIfBlock(tree)
-        elif type == 'ElifBlock':
-            self.visitElifBlock(tree)
-        
-        # fill from here
-        pass
+        try:
+            eval('self.visit_' + tree.current_node.type + '(tree)')
+        except AttributeError:
+            pass
 
     def get_result(self):
         return self.result
 
 
-    def visitProg(self, tree):
+    def visit_translationUnit(self, tree):
         '''
         语法规则：prog :(include)* (initialBlock|arrayInitBlock|structInitBlock|mStructDef|mFunction)*;
         描述：代码主文件

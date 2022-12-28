@@ -28,7 +28,7 @@ int charToInt(char c){
 	return res;
 }
 
-float calcu(float a, char theta, float b) {
+double calcu(double a, char theta, double b) {
 	int res;
 	if (theta == '+') {res = a + b;}
 	else if (theta == '-') {res = a - b;}
@@ -55,13 +55,13 @@ int main()
 
 
 
-	float opnd[2000];
+	double opnd[2000];
     char optr[2000];
     int i = 0;
     int opndTop = -1, optrTop = -1;
 	optrTop = optrTop + 1;optr[optrTop] = '\0';
     int isBeforeDigit = 0;
-    float currentNum = 0;
+    double currentNum = 0;
     for(;optrTop>=0;){
         if(s[i] >= '0' && s[i] <= '9')
         {
@@ -90,8 +90,8 @@ int main()
 		  else if(order == 0) 
 		  {
 			  char op = optr[optrTop]; optrTop = optrTop  - 1;
-			  float pOpnd2 = opnd[opndTop]; opndTop = opndTop  - 1;
-			  float pOpnd1 = opnd[opndTop]; opndTop = opndTop  - 1;
+			  double pOpnd2 = opnd[opndTop]; opndTop = opndTop  - 1;
+			  double pOpnd1 = opnd[opndTop]; opndTop = opndTop  - 1;
 			  opndTop=opndTop+1;opnd[opndTop] = calcu(pOpnd1, op, pOpnd2);
 		  }
 		  else if(order == 2) 

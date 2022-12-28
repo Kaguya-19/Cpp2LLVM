@@ -57,7 +57,7 @@ expr
     | arrayItem                         
     | func;
 
-typeDef : Int | Char | Float;
+typeDef : Int | Char | Double;
 
 arrayItem : Identifier  LeftBracket  expr  RightBracket ;
 
