@@ -612,8 +612,7 @@ class ParserTree:
             if self.children:
                 for child in self.children:
                     type = child.type
-                    if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or')\
-                        or type in {'HexidecimalLiteral','DecimalLiteral','OctalLiteral','BinaryLiteral'}:
+                    if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or'):
                         self.children.remove(child)
                         change = True
                         self.children.extend(child.children)

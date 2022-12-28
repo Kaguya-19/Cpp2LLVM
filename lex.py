@@ -20,7 +20,7 @@ class Lexer():
     A Lexer for C++
     '''
     
-    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','Identifier']
+    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','IntegerLiteral','Identifier']
     
     key_dict = { 'break': 'Break', 'case': 'Case', 'char': 'Char','const': 'Const','continue': 'Continue', 'default': 'Default', 'do': 'Do', 'double': 'Double', 'else': 'Else', 'enum': 'Enum', 'float': 'Float', 'for': 'For', 'if': 'If','int': 'Int', 'long': 'Long','return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'struct': 'Struct', 'switch': 'Switch', 'throw': 'Throw','try': 'Try', 'unsigned': 'Unsigned', 'void': 'Void','while': 'While' }
     my_key_dict = {'strlen':'Strlen','printf':'Printf','scanf':'Scanf','gets':'Gets'} #将系统库函数定义为关键字
@@ -193,21 +193,21 @@ class Lexer():
         if result:
             return Token('FloatingLiteral', result, self.old_pos, self.pos)
         
-        result = self.advance_word(Lexer.HexadecimalLiteral)
-        if result:
-            return Token('HexadecimalLiteral', result, self.old_pos, self.pos)
+        # result = self.advance_word(Lexer.HexadecimalLiteral)
+        # if result:
+        #     return Token('HexadecimalLiteral', result, self.old_pos, self.pos)
         
         result = self.advance_word(Lexer.DecimalLiteral)
         if result:
-            return Token('DecimalLiteral', result, self.old_pos, self.pos)
+            return Token('IntegerLiteral', result, self.old_pos, self.pos)
         
-        result = self.advance_word(Lexer.OctalLiteral)
-        if result:
-            return Token('OctalLiteral', result, self.old_pos, self.pos)
+        # result = self.advance_word(Lexer.OctalLiteral)
+        # if result:
+        #     return Token('OctalLiteral', result, self.old_pos, self.pos)
         
-        result = self.advance_word(Lexer.BinaryLiteral)
-        if result:
-            return Token('BinaryLiteral', result, self.old_pos, self.pos)
+        # result = self.advance_word(Lexer.BinaryLiteral)
+        # if result:
+        #     return Token('BinaryLiteral', result, self.old_pos, self.pos)
         
         return None        
         

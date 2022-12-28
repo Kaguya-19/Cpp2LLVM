@@ -73,5 +73,3 @@ getsRef : Gets  LeftParen  Identifier  RightParen ;
 funcRef : Identifier  LeftParen ((literal|Identifier)( Comma(literal|Identifier))*)?  RightParen ;
 
 literal : IntegerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
-
-IntegerLiteral : HexadecimalLiteral | DecimalLiteral | OctalLiteral | BinaryLiteral;
