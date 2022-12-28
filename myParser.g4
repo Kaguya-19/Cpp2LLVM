@@ -16,7 +16,6 @@ blocks : initialBlock | arrayInitBlock | assignBlock | ifBlocks| forBlock;
 initialBlock : typeDef Identifier ( Assign  expr)? ( Comma Identifier ( Assign  expr)?)*  Semi;
 arrayInitBlock : typeDef Identifier  LeftBracket  IntegerLiteral  RightBracket  Semi; 
 
-
 assignBlock : arrayItem  Assign  expr  Semi | Identifier  Assign  expr  Semi;
 
 ifBlocks : ifBlock elifBlock* elseBlock?;

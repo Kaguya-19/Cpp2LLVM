@@ -1,6 +1,5 @@
 import sys, json
 from .LRParser import ParserTree
-from .SymbolTable import SymbolTable
 from llvmlite import ir
 
 double = ir.DoubleType()
@@ -9,30 +8,59 @@ int32 = ir.IntType(32)
 int8 = ir.IntType(8)
 void = ir.VoidType()
 
-class SemanticError(Exception):
-    """语义错误基类"""
-    def __init__(self, msg, ctx=None):
-        super().__init__()
-        if ctx:
-            self.line = ctx.start.line 
-            self.column = ctx.start.column
-        else:
-            self.line = 0
-            self.column = 0
-        self.msg = msg
 
-    def __str__(self):
-        return "SemanticError: " + str(self.line) + ":" + str(self.column) + " " + self.msg
+
+
+
+class SymbolTable:
+    def __init__(self):
+        self.Table = [{}]
+        self.CurrentLevel = 0
+        
+    def Insert(self, key, value):
+        if key in self.Table[self.CurrentLevel]:
+            raise Exception("Redefine", key)
+        self.Table[self.CurrentLevel][key] = value
+
+    def Get(self, key):
+        i = self.CurrentLevel
+        while i >= 0:
+            if key in self.Table[i]:
+                return self.Table[i][key]
+            i -= 1
+        return None
+
+
+    def isIn(self, item):
+        i = self.CurrentLevel
+        while i >= 0:
+            if item in self.Table[i]:
+                return True
+            i -= 1
+        return False        
+
+    def addLevel(self):
+        self.CurrentLevel += 1
+        self.Table.append({})
+
+    def minusLevel(self):
+        if self.CurrentLevel == 0:
+            raise Exception("Wrong Level")
+        self.Table.pop()
+        self.CurrentLevel -= 1
+    
+    def isGlobal(self):
+        return self.CurrentLevel == 0
 
 class Visitor:
     def __init__(self, tree):
         
         self.tree = tree
-        
-         #控制llvm生成
+        self.SymbolTable = SymbolTable()
+
         self.Module = ir.Module()
-        self.Module.triple = "x86_64-pc-linux-gnu" # llvm.Target.from_default_triple()
-        self.Module.data_layout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128" # llvm.create_mcjit_compiler(backing_mod, target_machine)
+        self.Module.triple = sys.platform
+        self.Module.data_layout = 'e-m:e-i64:64-f80:128-n8:16:32:64-S128'        
         
         #语句块
         self.Blocks = []
@@ -52,9 +80,7 @@ class Visitor:
         
         #endif块
         self.EndifBlock = None
-
-        #符号表
-        self.SymbolTable = SymbolTable()
+        
         
     def visit(self,node):
         tree = self.tree
@@ -65,18 +91,14 @@ class Visitor:
         try:
             eval('self.visit_' + tree.current_node.type + '(tree)')
         except AttributeError:
-            pass
+            for i in range(tree.getChildCount()):
+                self.visit(tree.getChild(i))
 
     def get_result(self):
         return self.result
 
 
     def visit_translationUnit(self, tree):
-        '''
-        语法规则：prog :(include)* (initialBlock|arrayInitBlock|structInitBlock|mStructDef|mFunction)*;
-        描述：代码主文件
-        返回：无
-        '''
         for i in range(tree.getChildCount()):
             self.visit(tree.getChild(i))
 
@@ -120,7 +142,7 @@ class Visitor:
 
         #进一层
         self.CurrentFunction = FunctionName
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
 
         #存储函数的变量
         VariableList = {}
@@ -130,9 +152,8 @@ class Visitor:
             TheVariable = {}
             TheVariable["Type"] = ParameterList[i]['type']
             TheVariable["Name"] = NewVariable
-            TheResult = self.SymbolTable.AddItem(ParameterList[i]['IDname'], TheVariable)
-            if TheResult["result"] != "success":
-                raise SemanticError(ctx=tree,msg=TheResult["reason"])
+            self.SymbolTable.Insert(ParameterList[i]['IDname'], TheVariable)
+
 
         #处理函数body
         self.visit(tree.getChild(6)) # func body
@@ -141,7 +162,7 @@ class Visitor:
         self.CurrentFunction = ''
         self.Blocks.pop()
         self.Builders.pop()
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
     def visit_params(self, tree):
@@ -178,10 +199,10 @@ class Visitor:
         描述：函数体
         返回：无
         '''
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
         for index in range(tree.getChildCount()):
             self.visit(tree.getChild(index))
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
     def visit_body(self, tree):
@@ -220,7 +241,7 @@ class Visitor:
         i = 1
         while i < Length:
             IDname = tree.getChild(i).getText()
-            if self.SymbolTable.JudgeWhetherGlobal() == True:   
+            if self.SymbolTable.isGlobal() == True:   
                 NewVariable = ir.GlobalVariable(self.Module, ParameterType, name = IDname)
                 NewVariable.linkage = 'internal'
             else:
@@ -229,16 +250,15 @@ class Visitor:
             TheVariable = {}
             TheVariable["Type"] = ParameterType
             TheVariable["Name"] = NewVariable
-            TheResult = self.SymbolTable.AddItem(IDname, TheVariable)
-            if TheResult["result"] != "success":
-                raise SemanticError(ctx=tree,msg=TheResult["reason"])
+            self.SymbolTable.Insert(IDname, TheVariable)
+
 
             if tree.getChild(i + 1).getText() != '=':
                 i += 2
             else:
                 #初始化
                 Value = self.visit(tree.getChild(i + 2))
-                if self.SymbolTable.JudgeWhetherGlobal() == True:   
+                if self.SymbolTable.isGlobal() == True:   
                     #全局变量
                     NewVariable.initializer = ir.Constant(Value['type'], Value['name'].constant)
                     #print(Value['name'].constant)
@@ -260,7 +280,7 @@ class Visitor:
         IDname = tree.getChild(1).getText()
         Length = int(tree.getChild(3).getText())
 
-        if self.SymbolTable.JudgeWhetherGlobal() == True:   
+        if self.SymbolTable.isGlobal() == True:   
             #全局变量
             NewVariable = ir.GlobalVariable(self.Module, ir.ArrayType(Type, Length), name = IDname)
             NewVariable.linkage = 'internal'
@@ -271,9 +291,7 @@ class Visitor:
         TheVariable = {}
         TheVariable["Type"] = ir.ArrayType(Type, Length)
         TheVariable["Name"] = NewVariable
-        TheResult = self.SymbolTable.AddItem(IDname, TheVariable)
-        if TheResult["result"] != "success":
-            raise SemanticError(ctx=tree,msg=TheResult["reason"])
+        self.SymbolTable.Insert(IDname, TheVariable)
         return
 
     def visit_assignBlock(self, tree):
@@ -285,7 +303,7 @@ class Visitor:
         TheBuilder = self.Builders[-1]
         Length = tree.getChildCount()
         IDname = tree.getChild(0).getText()
-        if not '[' in IDname and self.SymbolTable.JudgeExist(IDname) == False:
+        if not '[' in IDname and self.SymbolTable.isIn(IDname) == False:
             raise SemanticError(ctx=tree,msg="变量未定义！")
 
         #待赋值结果 
@@ -361,7 +379,7 @@ class Visitor:
         返回：无
         '''
         #在If块中，有True和False两种可能的导向
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
         TheBuilder = self.Builders[-1]
         TrueBlock = TheBuilder.append_basic_block()
         FalseBlock = TheBuilder.append_basic_block()
@@ -385,7 +403,7 @@ class Visitor:
         self.Builders.pop()
         self.Blocks.append(FalseBlock)
         self.Builders.append(ir.IRBuilder(FalseBlock))
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
 
@@ -396,7 +414,7 @@ class Visitor:
         返回：无
         '''
         #在ElseIf块中，有True和False两种可能的导向
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
         TheBuilder = self.Builders[-1]
         TrueBlock = TheBuilder.append_basic_block()
         FalseBlock = TheBuilder.append_basic_block()
@@ -420,7 +438,7 @@ class Visitor:
         self.Builders.pop()
         self.Blocks.append(FalseBlock)
         self.Builders.append(ir.IRBuilder(FalseBlock))
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
     def visit_elseBlock(self, tree):
@@ -430,9 +448,9 @@ class Visitor:
         返回：无
         '''
         #Else分块直接处理body内容
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
         self.visit(tree.getChild(2)) # body
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
     def visit_forBlock(self, tree):
@@ -441,7 +459,7 @@ class Visitor:
         描述：for语句块
         返回：无
         '''
-        self.SymbolTable.EnterScope()
+        self.SymbolTable.addLevel()
         
         #for循环首先初始化局部变量
         self.visit(tree.getChild(2))
@@ -481,7 +499,7 @@ class Visitor:
         self.Builders.pop()
         self.Blocks.append(ForEnd)
         self.Builders.append(ir.IRBuilder(ForEnd))
-        self.SymbolTable.QuitScope()
+        self.SymbolTable.minusLevel()
         return
 
     def visit_for1Block(self, tree):
@@ -1064,14 +1082,14 @@ class Visitor:
         '''
         IDname = tree.getText()
         JudgeReg = False
-        if self.SymbolTable.JudgeExist(IDname) != True:
+        if self.SymbolTable.isIn(IDname) != True:
            return {
                 'type': int32,
                 'const': JudgeReg,
                 'name': ir.Constant(int32, None)
             }
         Builder = self.Builders[-1]
-        TheItem = self.SymbolTable.GetItem(IDname)
+        TheItem = self.SymbolTable.Get(IDname)
         # print(TheItem)
         if TheItem != None:
             if self.WhetherNeedLoad:

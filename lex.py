@@ -22,13 +22,13 @@ class Lexer():
     
     cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','IntegerLiteral','Identifier']
     
-    key_dict = { 'break': 'Break', 'case': 'Case', 'char': 'Char','const': 'Const','continue': 'Continue', 'default': 'Default', 'do': 'Do', 'double': 'Double', 'else': 'Else', 'enum': 'Enum', 'float': 'Float', 'for': 'For', 'if': 'If','int': 'Int', 'long': 'Long','return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'struct': 'Struct', 'switch': 'Switch', 'throw': 'Throw','try': 'Try', 'unsigned': 'Unsigned', 'void': 'Void','while': 'While' }
-    my_key_dict = {'strlen':'Strlen','printf':'Printf','scanf':'Scanf','gets':'Gets'} #将系统库函数定义为关键字
+    key_dict = { 'break': 'Break', 'char': 'Char', 'double': 'Double', 'else': 'Else', 'float': 'Float', 'for': 'For', 'if': 'If','int': 'Int','return': 'Return'}
+    my_key_dict = {'strlen':'Strlen','printf':'Printf','gets':'Gets'} #将系统库函数定义为关键字
     key_dict.update(my_key_dict)
     for value in key_dict.values():
         cpp_tokens.append(value)
     
-    optr_dict = { '(': 'LeftParen', ')': 'RightParen', '[': 'LeftBracket', ']': 'RightBracket', '{': 'LeftBrace', '}': 'RightBrace', '+': 'Plus', '-': 'Minus', '*': 'Star', '/': 'Div', '%': 'Mod', '^': 'Caret', '&': 'And', '|': 'Or', '~': 'Tilde', '!': 'Not', '=': 'Assign', '<': 'Less', '>': 'Greater', '?': 'Question', ':': 'Colon', ';': 'Semi', ',': 'Comma', '.': 'Dot', '...': 'Ellipsis', '->': 'Arrow', '++': 'PlusPlus', '--': 'MinusMinus', '<<': 'LeftShift', '>>': 'RightShift', '&&': 'AndAnd', '||': 'OrOr', '*=': 'StarAssign', '/=': 'DivAssign', '%=': 'ModAssign', '+=': 'PlusAssign', '-=': 'MinusAssign', '<<=': 'LeftShiftAssign', '>>=': 'RightShiftAssign', '&=': 'AndAssign', '^=': 'XorAssign', '|=': 'OrAssign', '==': 'Equal', '!=': 'NotEqual', '<=': 'LessEqual', '>=': 'GreaterEqual', '->*': 'ArrowStar', '#': 'Pound', '##': 'PoundPound' ,'::':'Doublecolon','.*':'DotStar'}
+    optr_dict = { '(': 'LeftParen', ')': 'RightParen', '[': 'LeftBracket', ']': 'RightBracket', '{': 'LeftBrace', '}': 'RightBrace', '+': 'Plus', '-': 'Minus', '*': 'Star', '/': 'Div','!': 'Not', '=': 'Assign', '<': 'Less', '>': 'Greater', ';': 'Semi', ',': 'Comma', '.': 'Dot', '&&': 'AndAnd', '||': 'OrOr', '==': 'Equal', '!=': 'NotEqual', '<=': 'LessEqual', '>=': 'GreaterEqual'}
     for value in optr_dict.values():
         cpp_tokens.append(value)
         

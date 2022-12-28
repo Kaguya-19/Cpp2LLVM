@@ -443,10 +443,18 @@ class Parser():
                     if item['lhs'] == 'S\'' and item['lookahead'] == 'EOF' and item['rhs'] == [self.start]:
                         self.action[str(state)]['EOF'] = ('acc',None)
                     else:
+                        if self.action[str(state)][item['lookahead']]:
+                            print('conflict')
+                            print(self.action[str(state)][item['lookahead']])
+                            print(item)
                         self.action[str(state)][item['lookahead']] = ('r',{'lhs':item['lhs'],'rhs':item['rhs']})
                 else:
                     token = item['rhs'][item['dot']]
                     if token in self.tokens:
+                        if self.action[str(state)][token]:
+                            print('conflict')
+                            print(self.action[str(state)][token])
+                            print(item)
                         self.action[str(state)][token] = ('s',self.compute_go(state,token))
                         # self.action[str(state)][token] = ('s',self.states[self.states.index(self.compute_go(state,token))]) # use index to make sure the state is in the list
         
