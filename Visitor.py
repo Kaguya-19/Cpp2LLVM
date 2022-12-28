@@ -1,5 +1,6 @@
 import sys, json
 from .LRParser import ParserTree
+from .SymbolTable import SymbolTable
 from llvmlite import ir
 
 double = ir.DoubleType()
@@ -41,9 +42,6 @@ class Visitor:
 
         #函数列表
         self.Functions = dict()
-
-        #结构体列表
-        self.Structure = Structure()
 
         #当前所在函数
         self.CurrentFunction = ''
