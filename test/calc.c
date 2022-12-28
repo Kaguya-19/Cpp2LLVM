@@ -1,108 +1,48 @@
-int main()
-{
-    char InputExpression[2000];
-    char OperationUpdated[2000];
-    int NumUpdated[2000];
-    int PresentNum = -1, PresentOperator = -1, DecimalProcess = 1, StrLength;
-    int num = 0, i;
-    printf("please input an calculate expression: ");
-    gets(InputExpression);
-    StrLength = strlen(InputExpression);
-    for(i = StrLength - 1; i >= 0; i = i - 1) 
-    {
-        InputExpression[i + 1] = InputExpression[i];
+#include <stdlib.h>
+#include  <string.h>
+
+int main() {
+	char InputArray1[1002];
+	char InputArray2[1002];
+	int FollowIndex[1002];
+	FollowIndex[0] = -1;
+	int lenInputArray1, lenInputArray2;
+	int i, j;
+	printf("input source string: ");
+	gets(InputArray1);
+	lenInputArray1 = strlen(InputArray1);
+	printf("input pattern string: ");
+	gets(InputArray2);
+	lenInputArray2 = strlen(InputArray2);
+	
+	for (i = 1, j = -1; i < lenInputArray2;  i = i + 1) 
+	{
+		for (; j >= 0 && InputArray2[i] != InputArray2[j+1]; j = FollowIndex[j]);
+		if (InputArray2[i] == InputArray2[j+1]) 
+		{
+            j = j + 1;
+        }
+		FollowIndex[i] = j;
+	}
+	int estimation = 0;
+    int k =0;
+	for (i = 0, j = -1; i < lenInputArray1; i = i + 1) 
+	{
+		for (; j >= 0 && InputArray1[i] != InputArray2[j+1]; j = FollowIndex[j]);
+		if (InputArray1[i] == InputArray2[j+1]) 
+		{
+            j = j + 1;
+        }
+		if (j + 1 == lenInputArray2) 
+		{
+			estimation = 1;
+            k = i - j;
+			printf("%d\n",k);
+			j = FollowIndex[j];
+		}
+	}
+	if (estimation == 0){
+		printf("False\n");
     }
-    i = StrLength + 1;
-    InputExpression[0] = '(';
-    InputExpression[StrLength + 1] = ')';
-    StrLength = StrLength + 2;
-    while(i >= 0){
-        if(InputExpression[i] == '+')
-        {
-            while(PresentOperator >= 0 && ((OperationUpdated[PresentOperator] == '*') || (OperationUpdated[PresentOperator] == '/'))){
-                if(OperationUpdated[PresentOperator] == '*') {
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] * NumUpdated[PresentNum - 1];
-                }
-                else {
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] / NumUpdated[PresentNum - 1];
-                }
-                PresentOperator = PresentOperator - 1;
-                PresentNum = PresentNum - 1;
-            }
-            PresentOperator = PresentOperator + 1;
-            OperationUpdated[PresentOperator] = '+';
-            i = i - 1;
-        }
-        else if(InputExpression[i] == '-')
-        {
-            while(PresentOperator >= 0 && ((OperationUpdated[PresentOperator] == '*') || (OperationUpdated[PresentOperator] == '/'))){
-                if(OperationUpdated[PresentOperator] == '*'){
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] * NumUpdated[PresentNum - 1];
-                }
-                else{
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] / NumUpdated[PresentNum - 1];
-                }
-                PresentNum = PresentNum - 1;
-                PresentOperator = PresentOperator - 1;
-            }
-            PresentOperator = PresentOperator + 1;
-            OperationUpdated[PresentOperator] = '-';
-            i = i - 1;
-        }
-        else if(InputExpression[i] == '*')
-        {
-            PresentOperator = PresentOperator + 1;
-            OperationUpdated[PresentOperator] = '*';
-            i = i - 1;
-        }
-        else if(InputExpression[i] == '/')
-        {
-            PresentOperator = PresentOperator + 1;
-            OperationUpdated[PresentOperator] = '/';
-            i = i - 1;
-        }
-        else if(InputExpression[i] == ')'){
-            PresentOperator = PresentOperator + 1;
-            OperationUpdated[PresentOperator] = ')';
-            i = i - 1;
-        }
-        else if(InputExpression[i] == '(')
-        {
-            while(OperationUpdated[PresentOperator] != ')')
-            {
-                char OperatorGet = OperationUpdated[PresentOperator];
-                PresentOperator = PresentOperator - 1;
-                if(OperatorGet == '/'){
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] / NumUpdated[PresentNum - 1];
-                }
-                else if(OperatorGet == '+'){
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] + NumUpdated[PresentNum - 1];
-                }
-                else if(OperatorGet == '-'){
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] - NumUpdated[PresentNum - 1];
-                }
-                else if(OperatorGet == '*'){
-                    NumUpdated[PresentNum - 1] = NumUpdated[PresentNum] * NumUpdated[PresentNum - 1];
-                }
-                PresentNum = PresentNum - 1;
-            }
-            PresentOperator = PresentOperator - 1;
-            i = i - 1;
-        }
-        else
-        {
-            num = 0;
-            DecimalProcess = 1;
-            while(i >= 0 && InputExpression[i] <= '9' && InputExpression[i] >= '0')
-            {
-                num = num + (InputExpression[i] - '0') * DecimalProcess;
-                DecimalProcess = DecimalProcess * 10;
-                i = i - 1;
-            }
-            NumUpdated[PresentNum + 1] = num;
-            PresentNum = PresentNum + 1;
-        }
-    }
-    printf("result: %d\n", NumUpdated[0]);
-    return 0;
+	return 0;
 }

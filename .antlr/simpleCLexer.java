@@ -1,4 +1,4 @@
-// Generated from d:\Working\Program\python\Cpp2LLVM\Cpp2LLVM\tt.g4 by ANTLR 4.9.2
+// Generated from d:\Working\Program\python\Cpp2LLVM\Cpp2LLVM\simpleC.g4 by ANTLR 4.9.2
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;
@@ -107,7 +107,7 @@ public class simpleCLexer extends Lexer {
 	}
 
 	@Override
-	public String getGrammarFileName() { return "tt.g4"; }
+	public String getGrammarFileName() { return "simpleC.g4"; }
 
 	@Override
 	public String[] getRuleNames() { return ruleNames; }

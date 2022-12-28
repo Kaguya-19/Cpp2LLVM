@@ -26,18 +26,18 @@ options {
 /*Basic concepts*/
 /*Expressions*/
 
-translationUnit :(initialBlock|arrayInitBlock|functionDefine )*;
+translationUnit :(initialBlock|arrayInitBlock|functionDefine)*;
 
-functionDefine : typeDef Identifier  LeftParen  params  RightParen  LeftBrace funcBody  RightBrace;
+functionDefine : typeDef Identifier  LeftParen  params?  RightParen  LeftBrace funcBody  RightBrace;
 
-params : (param |param( Comma param)+)?;
+params : param |param( Comma param)+;
 param  : typeDef Identifier;
 
 funcBody : body returnBlock;
 
 body : (blocks | func Semi)*;
 
-blocks : initialBlock | arrayInitBlock | assignBlock | ifBlocks| forBlock | returnBlock;
+blocks : initialBlock | arrayInitBlock | assignBlock | ifBlocks| forBlock;
 
 initialBlock : typeDef Identifier ( Assign  expr)? ( Comma Identifier ( Assign  expr)?)*  Semi;
 arrayInitBlock : typeDef Identifier  LeftBracket  IntegerLiteral  RightBracket  Semi; 
@@ -83,7 +83,7 @@ expr
     | arrayItem                         
     | func;
 
-typeDef : Int| Double | Char;
+typeDef : Int| Double | Char | Float;
 
 arrayItem : Identifier  LeftBracket  expr  RightBracket ;
 

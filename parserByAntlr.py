@@ -19,6 +19,10 @@ def toDict(tree):
 def main(argv=sys.argv):
     lexer = CPP14Lexer(StdinStream())
     stream = CommonTokenStream(lexer)
+    
+    for token in stream.tokens:
+        print(token)
+    
     # parser = CPP14Parser(stream)
     parser = myParser(stream)
     tree = parser.translationUnit()

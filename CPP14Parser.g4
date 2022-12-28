@@ -25,19 +25,16 @@ options {
 }
 /*Basic concepts*/
 
-translationUnit: declarationseq? EOF;
+translationUnit: declarationseq?;
 /*Expressions*/
 
 primaryExpression:
 	literal+
-	| This
 	| LeftParen expression RightParen
 	| idExpression
 	| lambdaExpression;
 
-idExpression: unqualifiedId | qualifiedId;
-
-unqualifiedId:
+idExpression:
 	Identifier
 	| operatorFunctionId
 	| conversionFunctionId
@@ -86,16 +83,8 @@ postfixExpression:
 	)
 	| postfixExpression (Dot | Arrow) (
 		Template? idExpression
-		| pseudoDestructorName
 	)
-	| postfixExpression (PlusPlus | MinusMinus)
-	| (
-		Dynamic_cast
-		| Static_cast
-		| Reinterpret_cast
-		| Const_cast
-	) Less theTypeId Greater LeftParen expression RightParen
-	| typeIdOfTheTypeId LeftParen (expression | theTypeId) RightParen;
+	| postfixExpression (PlusPlus | MinusMinus);
 /*
  add a middle layer to eliminate duplicated function declarations
  */
@@ -124,12 +113,10 @@ unaryExpression:
 unaryOperator: Or | Star | And | Plus | Tilde | Minus | Not;
 
 newExpression:
-	Doublecolon? New newPlacement? (
+	Doublecolon? New  (
 		newTypeId
 		| (LeftParen theTypeId RightParen)
-	) newInitializer?;
-
-newPlacement: LeftParen expressionList RightParen;
+	);
 
 newTypeId: typeSpecifierSeq newDeclarator?;
 
@@ -197,7 +184,7 @@ logicalOrExpression:
 
 conditionalExpression:
 	logicalOrExpression (
-		Question expression Colon assignmentExpression
+		Question expression Colon conditionalExpression
 	)?;
 
 assignmentExpression:
@@ -218,7 +205,7 @@ assignmentOperator:
 	| XorAssign
 	| OrAssign;
 
-expression: assignmentExpression (Comma assignmentExpression)*;
+expression: conditionalExpression (Comma conditionalExpression)*;
 
 constantExpression: conditionalExpression;
 /*Statements*/
@@ -264,7 +251,6 @@ iterationStatement:
 	| Do statement While LeftParen expression RightParen Semi
 	| For LeftParen (
 		forInitStatement condition? Semi expression?
-		| forRangeDeclaration Colon forRangeInitializer
 	) RightParen statement;
 
 forInitStatement: expressionStatement | simpleDeclaration;
@@ -279,10 +265,8 @@ jumpStatement:
 		Break
 		| Continue
 		| Return (expression | bracedInitList)?
-		| Goto Identifier
 	) Semi;
 
-declarationStatement: blockDeclaration;
 /*Declarations*/
 
 declarationseq: declaration+;
@@ -456,22 +440,27 @@ linkageSpecification:
 
 attributeSpecifierSeq: attributeSpecifier+;
 
-attributeSpecifier:
-	LeftBracket LeftBracket attributeList? RightBracket RightBracket
-	| alignmentspecifier;
+classSpecifier:
+	classHead LeftBrace memberSpecification? RightBrace;
 
-alignmentspecifier:
-	Alignas LeftParen (theTypeId | constantExpression) Ellipsis? RightParen;
+classHead:
+	classKey classHeadName? ;
 
-attributeList: attribute (Comma attribute)* Ellipsis?;
+classHeadName:  className;
 
-attribute: (attributeNamespace Doublecolon)? Identifier attributeArgumentClause?;
+classKey: Class | Struct;
 
-attributeNamespace: Identifier;
+memberSpecification:
+	(memberdeclaration | accessSpecifier Colon)+;
 
-attributeArgumentClause: LeftParen balancedTokenSeq? RightParen;
+memberdeclaration:
+	 declSpecifierSeq? memberDeclaratorList? Semi
+	| functionDefinition
+	| templateDeclaration
+	| Semi;
 
-balancedTokenSeq: balancedtoken+;
+memberDeclaratorList:
+	memberDeclarator (Comma memberDeclarator)*;
 
 balancedtoken:
 	LeftParen balancedTokenSeq RightParen

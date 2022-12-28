@@ -20,13 +20,10 @@ class Lexer():
     A Lexer for C++
     '''
     
-    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','MultiLineMacro','Directive','Identifier','']
+    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','MultiLineMacro','Directive','Identifier']
     
-    key_dict = { 'alignas': 'Alignas', 'alignof': 'Alignof', 'asm': 'Asm', 'auto': 'Auto', 'bool': 'Bool', 'break': 'Break', 'case': 'Case', 'catch': 'Catch', 'char': 'Char', 'char16_t': 'Char16_t', 'char32_t': 'Char32_t', 'class': 'Class', 'const': 'Const', 'constexpr': 'Constexpr', 'const_cast': 'Const_cast', 'continue': 'Continue', 'decltype': 'Decltype', 'default': 'Default', 'delete': 'Delete', 'do': 'Do', 'double': 'Double', 'dynamic_cast': 'Dynamic_cast', 'else': 'Else', 'enum': 'Enum', 'explicit': 'Explicit', 'export': 'Export', 'extern': 'Extern', 'false': 'BooleanLiteral', 'float': 'Float', 'for': 'For', 'friend': 'Friend', 'goto': 'Goto', 'if': 'If', 'inline': 'Inline', 'int': 'Int', 'long': 'Long', 'mutable': 'Mutable', 'namespace': 'Namespace', 'new': 'New', 'noexcept': 'Noexcept', 'nullptr': 'Nullptr', 'operator': 'Operator','override':'Override','final':'Final','protected':'Protected','public':'Public',
-                'private': 'Private', 'register': 'Register', 'reinterpret_cast': 'Reinterpret_cast', 'return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'static': 'Static', 'static_assert': 'Static_assert', 'static_cast': 'Static_cast', 'struct': 'Struct', 'switch': 'Switch', 'template': 'Template', 'this': 'This', 'thread_local': 'Thread_local', 'throw': 'Throw', 'true': 'BooleanLiteral', 'try': 'Try', 'typedef': 'Typedef', 'typeid': 'Typeid', 'typename': 'Typename', 'union': 'Union', 'unsigned': 'Unsigned', 'using': 'Using', 'virtual': 'Virtual', 'void': 'Void', 'volatile': 'Volatile', 'wchar_t': 'Wchar_t', 'while': 'While' }
-    my_key_dict = {'stack':'Stack','push':'push','empty':'empty','pop':'pop','top':'top',
-                   'istream':'Istream','ostream':'Ostream','cin':'Istream_cin','cout':'Ostream_cout','endl':'Ostream_endl',
-                   'string':'String','length':'Length','vector':'Vector','find':'Find','push_back':'Push_Back'} #将系统库函数定义为关键字
+    key_dict = { 'break': 'Break', 'case': 'Case', 'char': 'Char','const': 'Const','continue': 'Continue', 'default': 'Default', 'do': 'Do', 'double': 'Double', 'else': 'Else', 'enum': 'Enum', 'float': 'Float', 'for': 'For', 'if': 'If','int': 'Int', 'long': 'Long','return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'struct': 'Struct', 'switch': 'Switch', 'throw': 'Throw','try': 'Try', 'unsigned': 'Unsigned', 'void': 'Void','while': 'While' }
+    my_key_dict = {'strlen':'Strlen','printf':'Printf','scanf':'Scanf','gets':'Gets'} #将系统库函数定义为关键字
     key_dict.update(my_key_dict)
     for value in key_dict.values():
         cpp_tokens.append(value)
@@ -82,7 +79,7 @@ class Lexer():
     
     def skip(self):
         self.old_pos = self.pos
-        while self.advance_word(Lexer.Skip) != None :
+        while self.advance_word(Lexer.Skip) != None or self.advance_word(Lexer.MultiLineMacro) != None or self.advance_word(Lexer.Directive) != None:
             self.old_pos = self.pos
             continue
         return self.current_char
@@ -101,8 +98,8 @@ class Lexer():
                 token = self.scan_character()
             elif self.current_char == '"':
                 token = self.scan_string()
-            elif self.current_char == '#':
-                token = self.scan_directive()
+            # elif self.current_char == '#':
+            #     token = self.scan_directive()
             else:
                 # print(self.text)
                 # print(self.current_char)
@@ -260,17 +257,17 @@ class Lexer():
         # if Lexer.StringLiteral.match(result):
         #     return Token('StringLiteral', result, self.old_pos, self.pos)
         
-    def scan_directive(self):
+    # def scan_directive(self):
         
-        result = self.advance_word(Lexer.MultiLineMacro)
-        if result:
-            return Token('MultiLineMacro', result, self.old_pos, self.pos)
+    #     result = self.advance_word(Lexer.MultiLineMacro)
+    #     if result:
+    #         return Token('MultiLineMacro', result, self.old_pos, self.pos)
         
-        result = self.advance_word(Lexer.Directive)
-        if result:
-            return Token('Directive', result, self.old_pos, self.pos)
+    #     result = self.advance_word(Lexer.Directive)
+    #     if result:
+    #         return Token('Directive', result, self.old_pos, self.pos)
 
-        return None
+    #     return None
         
         
 if __name__ == '__main__':
