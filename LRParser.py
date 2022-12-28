@@ -577,8 +577,7 @@ class Parser():
                 f.write('\r')
                 
     def load_action(self):
-        with open('action.json','r') as f:
-            
+        with open('action.json','r') as f:      
             self.action = json.load(f)
     
     def load_goto(self):

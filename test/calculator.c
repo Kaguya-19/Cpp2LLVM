@@ -2,6 +2,9 @@
 
 char orderBetween(char a, char b) {
 	int pri[49];
+	int a_int;
+	int b_int;
+	int k;
 	pri[0] = 0; pri[1] = 0; pri[2] = 1; pri[3] = 1; pri[4] = 1; pri[5] = 0; pri[6] = 0;
 	pri[7] = 0; pri[8] = 0; pri[9] = 1; pri[10] = 1; pri[11] = 1; pri[12] = 0; pri[13] = 0;
 	pri[14] = 0; pri[15] = 0; pri[16] = 0; pri[17] = 0; pri[18] = 1; pri[19] = 0; pri[20] = 0;
@@ -9,9 +12,9 @@ char orderBetween(char a, char b) {
 	pri[21] = 1; pri[22] = 1; pri[23] = 1; pri[24] = 1; pri[25] = 1; pri[26] = 2; pri[27] = 3;
 	pri[28] = 3; pri[29] = 3; pri[30] = 3; pri[31] = 3; pri[32] = 3; pri[33] = 3; pri[34] = 3;
 	pri[35] = 1; pri[36] = 1; pri[37] = 1; pri[38] = 1; pri[39] = 1; pri[40] = 3; pri[41] = 2;
-	int a_int = charToInt(a);
-	int b_int = charToInt(b);
-	int k = a_int * 7 + b_int;
+	a_int = charToInt(a);
+	b_int = charToInt(b);
+	k = a_int * 7 + b_int;
 	k = pri[k];
 	return k;
 }
@@ -40,6 +43,17 @@ double calcu(double a, char theta, double b) {
 int main()
 {
     char s[2000];
+	double opnd[2000];
+    char optr[2000];
+    int i = 0;
+    int opndTop = -1, optrTop = -1;
+	int isBeforeDigit = 0;
+    double currentNum = 0;
+	char order;
+	int ord1,ord2;
+	char op;
+	double pOpnd1, pOpnd2;
+	int res;
     printf("please input the expression: ");
     gets(s);
 
@@ -55,13 +69,9 @@ int main()
 
 
 
-	double opnd[2000];
-    char optr[2000];
-    int i = 0;
-    int opndTop = -1, optrTop = -1;
+	
 	optrTop = optrTop + 1;optr[optrTop] = '\0';
-    int isBeforeDigit = 0;
-    double currentNum = 0;
+    
     for(;optrTop>=0;){
         if(s[i] >= '0' && s[i] <= '9')
         {
@@ -79,9 +89,9 @@ int main()
 		  else if ( s[i] == '-') {
               opndTop = opndTop+1;opnd[opndTop] = 0;
           }
-		  char order;
-		  int ord1 = optr[optrTop];
-		  int ord2 = s[i];
+
+		  ord1 = optr[optrTop];
+		  ord2 = s[i];
 		  order = orderBetween(ord1, ord2);
 		  if(order == 1) 
 		  {
@@ -89,9 +99,9 @@ int main()
 		  }
 		  else if(order == 0) 
 		  {
-			  char op = optr[optrTop]; optrTop = optrTop  - 1;
-			  double pOpnd2 = opnd[opndTop]; opndTop = opndTop  - 1;
-			  double pOpnd1 = opnd[opndTop]; opndTop = opndTop  - 1;
+			  op = optr[optrTop]; optrTop = optrTop  - 1;
+			  pOpnd2 = opnd[opndTop]; opndTop = opndTop  - 1;
+			  pOpnd1 = opnd[opndTop]; opndTop = opndTop  - 1;
 			  opndTop=opndTop+1;opnd[opndTop] = calcu(pOpnd1, op, pOpnd2);
 		  }
 		  else if(order == 2) 
@@ -100,7 +110,7 @@ int main()
 		  }
 	  }
     }
-   	int res = opnd[opndTop];
+   	res = opnd[opndTop];
     printf("%g",res);
     return 0;
 }

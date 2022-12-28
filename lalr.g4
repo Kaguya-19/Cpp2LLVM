@@ -1,11 +1,16 @@
+translation_unit
+	: external_declaration
+	| translation_unit external_declaration
+	;
+
 primary_expression
 	: Identifier
-	| Constant
+	| IntegerLiteral
+    | FloatingLiteral
+    | CharacterLiteral
 	| StringLiteral
 	| LeftParen expression RightParen
 	;
-
-Constant: IntegerLiteral | FloatingLiteral | CharacterLiteral;
 
 postfix_expression
 	: primary_expression
@@ -210,10 +215,7 @@ jump_statement
 	| Return expression Semi
 	;
 
-translation_unit
-	: external_declaration
-	| translation_unit external_declaration
-	;
+
 
 external_declaration
 	: function_definition
