@@ -20,7 +20,7 @@ class Lexer():
     A Lexer for C++
     '''
     
-    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','MultiLineMacro','Directive','Identifier']
+    cpp_tokens = ['EOF','FloatingLiteral','CharacterLiteral','StringLiteral','BinaryLiteral','HexadecimalLiteral','OctalLiteral','DecimalLiteral','Identifier']
     
     key_dict = { 'break': 'Break', 'case': 'Case', 'char': 'Char','const': 'Const','continue': 'Continue', 'default': 'Default', 'do': 'Do', 'double': 'Double', 'else': 'Else', 'enum': 'Enum', 'float': 'Float', 'for': 'For', 'if': 'If','int': 'Int', 'long': 'Long','return': 'Return', 'short': 'Short', 'signed': 'Signed', 'sizeof': 'Sizeof', 'struct': 'Struct', 'switch': 'Switch', 'throw': 'Throw','try': 'Try', 'unsigned': 'Unsigned', 'void': 'Void','while': 'While' }
     my_key_dict = {'strlen':'Strlen','printf':'Printf','scanf':'Scanf','gets':'Gets'} #将系统库函数定义为关键字

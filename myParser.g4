@@ -1,77 +1,77 @@
-translationUnit :(InitialBlock|ArrayInitBlock|FunctionDefine)*;
+/*Expressions*/
 
-FunctionDefine : TypeDef Identifier  LeftParen  Params  RightParen  LeftBrace FuncBody  RightBrace;
+translationUnit :(initialBlock|arrayInitBlock|functionDefine)*;
 
-Params : (Param |Param( Comma Param)+)?;
-Param  : TypeDef Identifier;
+functionDefine : typeDef Identifier  LeftParen  params?  RightParen  LeftBrace funcBody  RightBrace;
 
-FuncBody : Body ReturnBlock;
+params : param |param( Comma param)+;
+param  : typeDef Identifier;
 
-Body : (Blocks | Func Semi)*;
+funcBody : body returnBlock;
 
-Blocks : InitialBlock | ArrayInitBlock | AssignBlock | IfBlocks| ForBlock | ReturnBlock;
+body : (blocks | func Semi)*;
 
-InitialBlock : TypeDef Identifier ( Assign  Expr)? ( Comma Identifier ( Assign  Expr)?)*  Semi;
-ArrayInitBlock : TypeDef Identifier  LeftBracket  IntgerLiteral  RightBracket  Semi; 
+blocks : initialBlock | arrayInitBlock | assignBlock | ifBlocks| forBlock;
+
+initialBlock : typeDef Identifier ( Assign  expr)? ( Comma Identifier ( Assign  expr)?)*  Semi;
+arrayInitBlock : typeDef Identifier  LeftBracket  IntegerLiteral  RightBracket  Semi; 
 
 
-AssignBlock : ArrayItem  Assign  Expr  Semi | Identifier  Assign  Expr  Semi;
+assignBlock : arrayItem  Assign  expr  Semi | Identifier  Assign  expr  Semi;
 
+ifBlocks : ifBlock elifBlock* elseBlock?;
+ifBlock :  If   LeftParen condition RightParen   LeftBrace body  RightBrace;
+elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace body  RightBrace;
+elseBlock :  Else   LeftBrace body  RightBrace;
 
-IfBlocks : ifBlock ElifBlock* ElseBlock?;
-ifBlock :  If   LeftParen Condition RightParen   LeftBrace Body  RightBrace;
-ElifBlock :  Else   If   LeftParen  Condition  RightParen   LeftBrace Body  RightBrace;
-ElseBlock :  Else   LeftBrace Body  RightBrace;
+condition :  expr;
 
-Condition :  Expr;
+forBlock :  For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen   LeftBrace body  RightBrace
+            |For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen  Semi;
+for1Block :  Identifier  Assign  expr ( Comma for1Block)?;
+for3Block : Identifier  Assign  expr ( Comma for3Block)?;
 
-ForBlock :  For   LeftParen  For1Block?   Semi Condition  Semi For3Block?  RightParen   LeftBrace Body  RightBrace
-            |For   LeftParen  For1Block?   Semi Condition  Semi For3Block?  RightParen  Semi;
-For1Block :  Identifier  Assign  Expr ( Comma For1Block)?;
-For3Block : Identifier  Assign  Expr ( Comma For3Block)?;
+returnBlock : Return IntegerLiteral?  Semi |Return Identifier?  Semi;
 
-ReturnBlock : Return IntgerLiteral?  Semi |Return Identifier?  Semi;
-
-Expr
-    :  LeftParen  Expr  RightParen                
-    |  Not Expr                  
-    | Expr  Star  Expr
-    | Expr  Div  Expr
-    | Expr  Mod  Expr
-    | Expr  Plus  Expr   
-    | Expr  Minus  Expr
-    | Expr  Equal Expr 
-    | Expr  NotEqual Expr
-    | Expr  Less Expr
-    | Expr  Greater Expr
-    | Expr  LessEqual Expr
-    | Expr  GreaterEqual Expr
-    | Expr AndAnd Expr             
-    | Expr OrOr Expr                      
-    | Minus? IntgerLiteral                                   
+expr
+    :  LeftParen  expr  RightParen                
+    |  Not expr                  
+    | expr  Star  expr
+    | expr  Div  expr
+    | expr  Mod  expr
+    | expr  Plus  expr   
+    | expr  Minus  expr
+    | expr  Equal expr 
+    | expr  NotEqual expr
+    | expr  Less expr
+    | expr  Greater expr
+    | expr  LessEqual expr
+    | expr  GreaterEqual expr
+    | expr AndAnd expr             
+    | expr OrOr expr                      
+    | Minus? IntegerLiteral                                   
     | Minus? FloatingLiteral          
     | CharacterLiteral                       
     | StringLiteral                       
-    | Identifier                         
-    | Func;
+    | Identifier
+    | arrayItem                         
+    | func;
 
-TypeDef : Int| Double | Char;
+typeDef : Int | Char | Float;
 
-ArrayRef : Identifier  LeftBracket  IntgerLiteral  RightBracket ; 
+arrayItem : Identifier  LeftBracket  expr  RightBracket ;
 
-ArrayItem : Identifier  LeftBracket  Expr  RightBracket ;
+func : strlenRef|printfRef |getsRef| funcRef;
 
-Func : StrlenRef|PrintfRef |GetsRef| FuncRef;
+strlenRef : Strlen  LeftParen  Identifier  RightParen ;
 
-StrlenRef : Strlen  LeftParen  Identifier  RightParen ;
+printfRef : Printf  LeftParen  StringLiteral ( Comma expr)*  RightParen 
+            |Printf  LeftParen  Identifier ( Comma expr)*  RightParen;
 
-PrintfRef : Printf  LeftParen  StringLiteral ( Comma Expr)*  RightParen 
-            |Printf  LeftParen  Identifier ( Comma Expr)*  RightParen;
+getsRef : Gets  LeftParen  Identifier  RightParen ;
 
-GetsRef : Gets  LeftParen  Identifier  RightParen ;
+funcRef : Identifier  LeftParen ((literal|Identifier)( Comma(literal|Identifier))*)?  RightParen ;
 
-FuncRef : Identifier  LeftParen ((Literal|Identifier)( Comma(Literal|Identifier))*)?  RightParen ;
+literal : IntegerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
 
-Literal : IntgerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
-
-IntgerLiteral : HexadecimalLiteral | DecimalLiteral | OctalLiteral | BinaryLiteral;
+IntegerLiteral : HexadecimalLiteral | DecimalLiteral | OctalLiteral | BinaryLiteral;
