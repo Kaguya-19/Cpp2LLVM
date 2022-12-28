@@ -14,7 +14,7 @@ class SemanticError(Exception):
     def __init__(self, msg, ctx=None):
         super().__init__()
         if ctx:
-            self.line = ctx.start.line  #错误出现位置
+            self.line = ctx.start.line 
             self.column = ctx.start.column
         else:
             self.line = 0
@@ -82,16 +82,13 @@ class Visitor:
 
     #函数相关函数
     def visit_functionDefine(self, tree):
-
+    
         '''
         语法规则：mFunction : (mType|mVoid|mStruct) mID '(' params ')' '{' funcBody '}';
         描述：函数的定义
         返回：无
         '''
-        #获取返回值类型
         ReturnType = self.visit(tree.getChild(0)) # mtype
-        
-        #获取函数名 todo
         FunctionName = tree.getChild(1).getText() # func name
         
         #获取参数列表
@@ -666,7 +663,6 @@ class Visitor:
         ReturnValue = 'width'
         return hasattr(typ, ReturnValue)
 
-# TODO: SemanticError
     def exprConvert(self, Index1, Index2):
         if Index1['type'] == Index2['type']:
             return Index1, Index2
@@ -686,12 +682,15 @@ class Visitor:
         elif self.isInteger(Index2['type']) and Index1['type'] == double:
             Index2 = self.convertIDS(Index2, Index1['type'])
         else:
-            raise SemanticError(ctx=tree,msg="类型不匹配")
+            raise SemanticError(msg="类型不匹配")
         return Index1, Index2
 
     def visit_expr(self, tree):
         chs = tree.getChildCount()
         if chs == 1:
+            nodetype = tree.getChild(0).type
+            if nodetype == 'arrayItem':
+                ReturnValue = self.visit_Array_exp(tree)
             ReturnValue = self.visit(tree.getChild(0))
         elif chs == 2:
             nodetype = tree.getChild(0).type
@@ -889,8 +888,7 @@ class Visitor:
             return double
         return void
 
-# TODO: wtf is this
-    def visitArrayItem(self, tree):
+    def visit_Array_exp(self, tree):
         '''
         语法规则：expr : arrayItem 
         描述：数组元素
@@ -1098,7 +1096,6 @@ class Visitor:
                 'name': ir.Constant(void, None)
             }
 
-    # TODO: tree.getText()?
     def visit_IntegerLiteral(self, tree):
         '''
         语法规则：mINT : INT;
@@ -1112,7 +1109,6 @@ class Visitor:
                 'name': ir.Constant(int32, int(tree.getText()))
         }
 
-    # TODO: tree.getText()?
     def visit_FloatingLiteral(self, tree):
         '''
         语法规则：mDOUBLE : DOUBLE;
@@ -1126,7 +1122,6 @@ class Visitor:
                 'name': ir.Constant(double, float(tree.getText()))
         }
 
-    # TODO: tree.getText()?
     def visit_CharacterLiteral(self, tree):
         '''
         语法规则：mCHAR : CHAR;
@@ -1140,7 +1135,6 @@ class Visitor:
                 'name': ir.Constant(int8, ord(tree.getText()[1]))
         }
 
-    # TODO: tree.getText()?
     def visit_StringLiteral(self, tree):
         '''
         语法规则：mSTRING : STRING;
@@ -1172,23 +1166,14 @@ class Visitor:
         with open(filename, "w") as f:
             f.write(repr(self.Module))
 
-def generate(input_filename, output_filename):
+def generate(parserTree,output_filename):
     """
     将C代码文件转成IR代码文件
     :param input_filename: C代码文件
     :param output_filename: IR代码文件
     :return: 生成是否成功
     """
-    lexer = simpleCLexer(FileStream(input_filename))
-    stream = CommonTokenStream(lexer)
-    parser = simpleCParser(stream)
-    parser.removeErrorListeners()
-    errorListener = syntaxErrorListener()
-    parser.addErrorListener(errorListener)
 
-    tree = parser.prog()
     v = Visitor()
-    v.visit(tree)
+    v.visit(parserTree)
     v.save(output_filename)
-
-#del simpleCParser

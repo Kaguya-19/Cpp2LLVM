@@ -665,6 +665,9 @@ class ParserTree:
     
     def getChildCount(self):
         return len(self.current_node.children)
+    
+    def getText(self):
+        return self.current_node.getText()
         
         
 if __name__ == '__main__':
