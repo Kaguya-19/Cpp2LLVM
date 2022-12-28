@@ -51,9 +51,6 @@ class Visitor:
     def visit_node(self, tree):
         # TODO:
         type = tree.current_node.type
-        if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or'):
-            for i in range(tree.getChildCount()):
-                self.visit(tree.getChild(i))
         if type == 'Prog':
             for i in range(tree.getChildCount()):
                 self.visit(tree.getChild(i))

@@ -1,39 +1,36 @@
 translationUnit :(InitialBlock|ArrayInitBlock|FunctionDefine)*;
 
-
 FunctionDefine : TypeDef Identifier  LeftParen  Params  RightParen  LeftBrace FuncBody  RightBrace;
 
-
-Params : (Param  ( Comma Param )*)?;
+Params : (Param |Param( Comma Param)+)?;
 Param  : TypeDef Identifier;
 
+FuncBody : Body ReturnBlock;
 
-FuncBody : Body returnBlock;
+Body : (Blocks | Func Semi)*;
 
-Body : (Blocks | FuncRef Semi)*;
-
-Blocks : InitialBlock | ArrayInitBlock | AssignBlock | ifBlocks| forBlock | returnBlock;
+Blocks : InitialBlock | ArrayInitBlock | AssignBlock | IfBlocks| ForBlock | ReturnBlock;
 
 InitialBlock : TypeDef Identifier ( Assign  Expr)? ( Comma Identifier ( Assign  Expr)?)*  Semi;
 ArrayInitBlock : TypeDef Identifier  LeftBracket  IntgerLiteral  RightBracket  Semi; 
 
 
-AssignBlock : arrayItem  Assign  Expr  Semi | Identifier  Assign  Expr  Semi;
+AssignBlock : ArrayItem  Assign  Expr  Semi | Identifier  Assign  Expr  Semi;
 
 
-ifBlocks : ifBlock elifBlock* elseBlock?;
-ifBlock :  If   LeftParen condition RightParen   LeftBrace Body  RightBrace;
-elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace Body  RightBrace;
-elseBlock :  Else   LeftBrace Body  RightBrace;
+IfBlocks : ifBlock ElifBlock* ElseBlock?;
+ifBlock :  If   LeftParen Condition RightParen   LeftBrace Body  RightBrace;
+ElifBlock :  Else   If   LeftParen  Condition  RightParen   LeftBrace Body  RightBrace;
+ElseBlock :  Else   LeftBrace Body  RightBrace;
 
-condition :  Expr;
+Condition :  Expr;
 
-forBlock :  For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen   LeftBrace Body  RightBrace
-            |For   LeftParen  for1Block?   Semi condition  Semi for3Block?  RightParen  Semi;
-for1Block :  Identifier  Assign  Expr ( Comma for1Block)?;
-for3Block : Identifier  Assign  Expr ( Comma for3Block)?;
+ForBlock :  For   LeftParen  For1Block?   Semi Condition  Semi For3Block?  RightParen   LeftBrace Body  RightBrace
+            |For   LeftParen  For1Block?   Semi Condition  Semi For3Block?  RightParen  Semi;
+For1Block :  Identifier  Assign  Expr ( Comma For1Block)?;
+For3Block : Identifier  Assign  Expr ( Comma For3Block)?;
 
-returnBlock : Return IntgerLiteral?  Semi |Return Identifier?  Semi;
+ReturnBlock : Return IntgerLiteral?  Semi |Return Identifier?  Semi;
 
 Expr
     :  LeftParen  Expr  RightParen                
@@ -56,15 +53,15 @@ Expr
     | CharacterLiteral                       
     | StringLiteral                       
     | Identifier                         
-    | FuncRef;
+    | Func;
 
-TypeDef : Int| Double | Char | String ;
+TypeDef : Int| Double | Char;
 
 ArrayRef : Identifier  LeftBracket  IntgerLiteral  RightBracket ; 
 
-arrayItem : Identifier  LeftBracket  Expr  RightBracket ;
+ArrayItem : Identifier  LeftBracket  Expr  RightBracket ;
 
-FuncRef : StrlenRef|PrintfRef |GetsRef| FuncRef;
+Func : StrlenRef|PrintfRef |GetsRef| FuncRef;
 
 StrlenRef : Strlen  LeftParen  Identifier  RightParen ;
 

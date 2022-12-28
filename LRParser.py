@@ -8,13 +8,15 @@ class Parser():
     '''
     A LR(1) parser for C++
     '''
-    def __init__(self, grammar_file, tokens=[],start='translationUnit'):
+    def __init__(self, grammar_file, tokens=[],start='translationUnit',load_state=False,load_table=False):
         self.grammar = self.read_grammar_g4(grammar_file)
         self.tokens = tokens
         self.nonterminals = list(self.grammar.keys()) 
         self.action = {}
         self.goto = {}
         self.start = start
+        self.load_state = load_state
+        self.load_table = load_table
         self.build_table()
         
     def read_grammar_g4(self, filename):
@@ -212,9 +214,19 @@ class Parser():
         # self.compute_follow_total()
         
         # Build the parsing table
-        self.compute_states()
-        self.build_action()
-        self.build_goto()
+        if self.load_state:
+            self.load_states()
+        else:
+            self.compute_states()
+            self.save_state()
+        if self.load_table:
+            self.load_action()
+            self.load_goto()
+        else:
+            self.build_action()
+            self.save_action()
+            self.build_goto()
+            self.save_goto()
         
     
     def compute_first_total(self):
@@ -545,25 +557,27 @@ class Parser():
 
     def save_action(self):
         with open('action.json','w') as f:
-            json.dump(self.action,f,indent=1)
+            json.dump(self.action,f)
     def save_goto(self):
         with open('goto.json','w') as f:
-            json.dump(self.goto,f,indent=1)
+            json.dump(self.goto,f)
     def save_state(self):
         with open('state.json','w') as f:
             for state in self.states:
-                json.dump({'state':state},f,indent=0)
+                # print in one line
+                json.dump({'state':state},f)
                 f.write('\r')
                 
     def load_action(self):
         with open('action.json','r') as f:
+            
             self.action = json.load(f)
     
     def load_goto(self):
         with open('goto.json','r') as f:
             self.goto = json.load(f)
             
-    def load_state(self):
+    def load_states(self):
         with open('state.json','r') as f:
             self.states = []
             for line in f:
@@ -589,6 +603,20 @@ class ParserTree:
         
         def __str__(self):
             return json.dumps(self.__dict__(),indent=1)
+        
+        def delStar(self):
+            change = False
+            if self.children:
+                for child in self.children:
+                    type = child.type
+                    if type.endswith('_?') or type.endswith('_*') or type.endswith('_+') or type.endswith('_paren') or type.endswith('_or'):
+                        self.children.remove(child)
+                        change = True
+                        self.children.extend(child.children)
+                    child.delStar()
+            return change
+            
+                
     
     def __init__(self):
         self.stack = []
@@ -622,6 +650,8 @@ class ParserTree:
     def end(self):
         self.root = self.stack.pop()
         self.current_node = self.root
+        while self.root.delStar():
+            pass
         
         
     def getChild(self, index):
@@ -634,14 +664,12 @@ class ParserTree:
         return len(self.current_node.children)
         
         
+        
 if __name__ == '__main__':
     # Initialize the parser
     lexer = Lexer(sys.stdin.read())
     tokens = lexer.scan()
     parser = Parser('./myParser.g4', Lexer.cpp_tokens,start='translationUnit')
     # parser = Parser('./cppParser.g4', Lexer.cpp_tokens,start='translationUnit')
-    parser.save_state()
-    # parser.save_action()
-    # parser.save_goto()
     # Parse the tokens
     print(parser.parse(tokens))
