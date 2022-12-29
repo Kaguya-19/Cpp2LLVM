@@ -8,10 +8,6 @@ int32 = ir.IntType(32)
 int8 = ir.IntType(8)
 void = ir.VoidType()
 
-
-
-
-
 class SymbolTable:
     def __init__(self):
         self.Table = [{}]
@@ -97,7 +93,49 @@ class Visitor:
     def get_result(self):
         return self.result
 
-
+    # def visit_translation_unit(self, tree):
+    #     for i in range(tree.getChildCount()):
+    #         self.visit(tree.getChild(i))
+    
+    # def visit_primary_expression(self, tree):
+    #     if tree.getChildCount() == 1:
+    #         return self.visit(tree.getChild(0))
+    #     else:
+    #         return self.visit(tree.getChild(1))
+            
+    # def visit_postfix_expression(self, tree):
+    #     if tree.getChildCount() == 1:
+    #         return self.visit(tree.getChild(0)) # primary_expression
+    #     if tree.getChildCount() == 3:
+    #         return self.visit(tree.getChild(0))
+    #     if tree.getChildCount() == 4:
+    #         self.visit(tree.getChild(0)) 
+    #         self.visit(tree.getChild(2)) # expression
+    #         return 
+            
+    # def visit_argument_expression_list(self, tree):
+    #     if tree.getChildCount() == 1:
+    #         self.visit(tree.getChild(0))
+    #     else:
+    #         self.visit(tree.getChild(0)) 
+    #         self.visit(tree.getChild(2))
+            
+    # def visit_compound_statement(self, tree):
+    #     if tree.getChildCount() == 2:
+    #         return
+    #     else:
+    #         self.visit(tree.getChild(1))
+        
+        
+    # def visit_function_definition(self, tree):
+    #     ReturnType = self.visit(tree.getChild(0))
+    #     FunctionName = tree.getChild(1).getText()
+    #     ParameterList = self.visit(tree.getChild(3))
+    #     ParameterTypeList = []
+    #     for i in range(len(ParameterList)):
+    #         ParameterTypeList.append(ParameterList[i]['type'])
+            
+    
     def visit_translationUnit(self, tree):
         for i in range(tree.getChildCount()):
             self.visit(tree.getChild(i))
@@ -132,7 +170,7 @@ class Visitor:
 
         #判断重定义，存储函数
         if FunctionName in self.Functions:
-            raise SemanticError(ctx=tree,msg="函数重定义错误！")
+            raise Exception("函数重定义错误！")
         else:
             self.Functions[FunctionName] = LLVMFunction
 
@@ -304,7 +342,7 @@ class Visitor:
         Length = tree.getChildCount()
         IDname = tree.getChild(0).getText()
         if not '[' in IDname and self.SymbolTable.isIn(IDname) == False:
-            raise SemanticError(ctx=tree,msg="变量未定义！")
+            raise Exception("变量未定义！")
 
         #待赋值结果 
         ValueToBeAssigned = self.visit(tree.getChild(Length - 2))
@@ -700,15 +738,24 @@ class Visitor:
         elif self.isInteger(Index2['type']) and Index1['type'] == double:
             Index2 = self.convertIDS(Index2, Index1['type'])
         else:
-            raise SemanticError(msg="类型不匹配")
+            raise Exception("类型不匹配")
         return Index1, Index2
 
-    def visit_expr(self, tree):
+    
+    def visit_primaryExpr(self, tree):
         chs = tree.getChildCount()
         if chs == 1:
-            nodetype = tree.getChild(0).type
-            if nodetype == 'arrayItem':
-                ReturnValue = self.visit_Array_exp(tree)
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit(tree.getChild(1))
+        return ReturnValue
+    
+    def visit_postfixExpr(self, tree):
+        return self.visit(tree.getChild(0))
+    
+    def visit_unaryExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
             ReturnValue = self.visit(tree.getChild(0))
         elif chs == 2:
             nodetype = tree.getChild(0).type
@@ -716,26 +763,97 @@ class Visitor:
                 ReturnValue = self.visit_MinusLiteral(tree)
             elif nodetype == 'Not':
                 ReturnValue = self.visit_Not(tree)
-        elif chs == 3:
-            nodetype = tree.getChild(0).type
-            if nodetype in {'Star', 'Div', 'Mod'}:
-                ReturnValue = self.visit_MulDiv(tree)
-            elif nodetype in {'Plus', 'Minus'}:
-                ReturnValue = self.visit_AddSub(tree)
-            elif nodetype in {'Equal', 'NotEqual', 'Less',
-             'Greater', 'LessEqual', 'GreaterEqual'}:
-                ReturnValue = self.visit_relop(tree)
-            elif nodetype == 'AndAnd':
-                ReturnValue = self.visit_AndAnd(tree)
-            elif nodetype == 'OrOr':
-                ReturnValue = self.visit_OrOr(tree)
-            elif nodetype == 'LeftParen':
-                ReturnValue = self.visit_Parens(tree)
-        else:
-            # raise error
-            pass
-
         return ReturnValue
+    
+    def visit_multExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit_MulDiv(tree)
+        return ReturnValue
+    
+    def visit_addExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit_AddSub(tree)
+        return ReturnValue
+    
+    def visit_relaExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.self.visit_relop(tree)
+        return ReturnValue
+    
+    def visit_equalExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit_eqop(tree)
+        return ReturnValue
+    
+    def visit_andExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit_AndAnd(tree)
+        return ReturnValue
+    
+    def visit_orExpr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        elif chs == 3:
+            ReturnValue = self.visit_OrOr(tree)
+        return ReturnValue
+    
+            
+    def visit_expr(self, tree):
+        chs = tree.getChildCount()
+        if chs == 1:
+            ReturnValue = self.visit(tree.getChild(0))
+        return ReturnValue
+            
+    
+    # def visit_expr(self, tree):
+    #     chs = tree.getChildCount()
+    #     if chs == 1:
+    #         nodetype = tree.getChild(0).type
+    #         if nodetype == 'arrayItem':
+    #             ReturnValue = self.visit_Array_exp(tree)
+    #         ReturnValue = self.visit(tree.getChild(0))
+    #     elif chs == 2:
+    #         nodetype = tree.getChild(0).type
+    #         if nodetype == 'Minus':
+    #             ReturnValue = self.visit_MinusLiteral(tree)
+    #         elif nodetype == 'Not':
+    #             ReturnValue = self.visit_Not(tree)
+    #     elif chs == 3:
+    #         nodetype = tree.getChild(0).type
+    #         if nodetype in {'Star', 'Div', 'Mod'}:
+    #             ReturnValue = self.visit_MulDiv(tree)
+    #         elif nodetype in {'Plus', 'Minus'}:
+    #             ReturnValue = self.visit_AddSub(tree)
+    #         elif nodetype in {'Equal', 'NotEqual', 'Less',
+    #          'Greater', 'LessEqual', 'GreaterEqual'}:
+    #             ReturnValue = self.visit_relop(tree)
+    #         elif nodetype == 'AndAnd':
+    #             ReturnValue = self.visit_AndAnd(tree)
+    #         elif nodetype == 'OrOr':
+    #             ReturnValue = self.visit_OrOr(tree)
+    #         elif nodetype == 'LeftParen':
+    #             ReturnValue = self.visit_Parens(tree)
+    #     else:
+    #         # raise error
+    #         pass
+
+    #     return ReturnValue
 
     def visit_Parens(self, tree):
         '''
@@ -938,7 +1056,7 @@ class Visitor:
                     'struct_name': res['struct_name'] if 'struct_name' in res else None
             }
         else:   # error!
-            raise SemanticError(ctx=tree,msg="类型错误")
+            raise Exception("类型错误")
 
 #调用函数相关函数
     def visit_func(self, tree):
@@ -1063,7 +1181,7 @@ class Visitor:
             Result = {'type': TheFunction.function_type.return_type, 'name': ReturnVariableName}
             return Result
         else:
-            raise SemanticError(ctx=tree,msg="函数未定义！")
+            raise Exception("函数未定义！")
 
 
     def visit_literal(self, tree):
@@ -1185,13 +1303,8 @@ class Visitor:
             f.write(repr(self.Module))
 
 def generate(parserTree,output_filename):
-    """
-    将C代码文件转成IR代码文件
-    :param input_filename: C代码文件
-    :param output_filename: IR代码文件
-    :return: 生成是否成功
-    """
 
     v = Visitor()
     v.visit(parserTree)
     v.save(output_filename)
+    

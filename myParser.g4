@@ -18,9 +18,8 @@ arrayInitBlock : typeDef Identifier  LeftBracket  IntegerLiteral  RightBracket  
 
 assignBlock : arrayItem  Assign  expr  Semi | Identifier  Assign  expr  Semi;
 
-ifBlocks : ifBlock elifBlock* elseBlock?;
+ifBlocks : ifBlock elseBlock;
 ifBlock :  If   LeftParen condition RightParen   LeftBrace body  RightBrace;
-elifBlock :  Else   If   LeftParen  condition  RightParen   LeftBrace body  RightBrace;
 elseBlock :  Else   LeftBrace body  RightBrace;
 
 condition :  expr;
@@ -32,29 +31,43 @@ for3Block : Identifier  Assign  expr ( Comma for3Block)?;
 
 returnBlock : Return IntegerLiteral?  Semi |Return Identifier?  Semi;
 
-expr
-    :  LeftParen  expr  RightParen                
-    |  Not expr                  
-    | expr  Star  expr
-    | expr  Div  expr
-    | expr  Mod  expr
-    | expr  Plus  expr   
-    | expr  Minus  expr
-    | expr  Equal expr 
-    | expr  NotEqual expr
-    | expr  Less expr
-    | expr  Greater expr
-    | expr  LessEqual expr
-    | expr  GreaterEqual expr
-    | expr AndAnd expr             
-    | expr OrOr expr                      
-    | Minus? IntegerLiteral                                   
-    | Minus? FloatingLiteral          
-    | CharacterLiteral                       
-    | StringLiteral                       
-    | Identifier
-    | arrayItem                         
-    | func;
+
+primaryExpr: Identifier | IntegerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral | LeftParen expr RightParen;
+postfixExpr: primaryExpr | arrayItem | func;
+unaryExpr: postfixExpr | Minus multExpr | Not multExpr;
+castExpr: unaryExpr ;
+multExpr: castExpr | multExpr Star castExpr | multExpr Div castExpr;
+addExpr: multExpr | addExpr Plus multExpr | addExpr Minus multExpr;
+relaExpr: addExpr | relaExpr Less addExpr | relaExpr Greater addExpr | relaExpr LessEqual addExpr | relaExpr GreaterEqual addExpr;
+equalExpr: relaExpr | equalExpr Equal relaExpr | equalExpr NotEqual relaExpr;
+andExpr: equalExpr | andExpr AndAnd equalExpr;
+orExpr: andExpr | orExpr OrOr andExpr;
+// assignExpr: orExpr | unaryExpr Assign assignExpr;
+expr: orExpr;
+
+// expr
+//     :  LeftParen  expr  RightParen                
+//     |  Not expr                  
+//     | expr  Star  expr
+//     | expr  Div  expr
+//     | expr  Mod  expr
+//     | expr  Plus  expr   
+//     | expr  Minus  expr
+//     | expr  Equal expr 
+//     | expr  NotEqual expr
+//     | expr  Less expr
+//     | expr  Greater expr
+//     | expr  LessEqual expr
+//     | expr  GreaterEqual expr
+//     | expr AndAnd expr             
+//     | expr OrOr expr                      
+//     | Minus? IntegerLiteral                                   
+//     | Minus? FloatingLiteral          
+//     | CharacterLiteral                       
+//     | StringLiteral                       
+//     | Identifier
+//     | arrayItem                         
+//     | func;
 
 typeDef : Int | Char | Double;
 
@@ -69,6 +82,4 @@ printfRef : Printf  LeftParen  StringLiteral ( Comma expr)*  RightParen
 
 getsRef : Gets  LeftParen  Identifier  RightParen ;
 
-funcRef : Identifier  LeftParen ((literal|Identifier)( Comma(literal|Identifier))*)?  RightParen ;
-
-literal : IntegerLiteral | FloatingLiteral | CharacterLiteral | StringLiteral;
+funcRef : Identifier  LeftParen (primaryExpr( Comma primaryExpr)*)?  RightParen;
