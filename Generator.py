@@ -617,98 +617,148 @@ class myCVisitor(CVisitor):
                 return cast_expr, cast_expr_pointer
 
     def visit_UnaryExpression(self, ctx: CParser.UnaryExpressionContext):
+        '''
+            unaryExpression
+            :   postfixExpression
+            |   '++' unaryExpression
+            |   '--' unaryExpression
+            |   unaryOperator castExpression
+            |   'sizeof' unaryExpression
+            |   'sizeof' '(' typeName ')'
+            ;
+        '''
         if len(ctx.children) == 1:
-            postfix_expression, _ = self.visit(ctx.children[0])
-            return postfix_expression, _
+            postfix_expr, _ = self.visit(ctx.children[0])
+            return postfix_expr, _
         elif len(ctx.children) == 2:
-            operator = ctx.children[0]
-            if operator.getText() == '++':
-                unary_expression, unary_expression_pointer = self.visit(ctx.children[1])
-                if unary_expression_pointer is True:
-                    unary_expression_pointer = unary_expression
-                    unary_expression = self.builder.load(unary_expression_pointer)
-                    unary_expression = self.builder.add(unary_expression, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(unary_expression, unary_expression_pointer)
-                return unary_expression, unary_expression_pointer
-            elif operator.getText() == '--':
-                unary_expression, unary_expression_pointer = self.visit(ctx.children[1])
-                if unary_expression_pointer is True:
-                    unary_expression_pointer = unary_expression
-                    unary_expression = self.builder.load(unary_expression_pointer)
-                    unary_expression = self.builder.sub(unary_expression, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(unary_expression, unary_expression_pointer)
-                return unary_expression, unary_expression_pointer
-            elif operator.getText() == 'sizeof':
+            optr = ctx.children[0]
+            if optr.getText() == '++':
+                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
+                if unary_expr_ptr is True:
+                    unary_expr_ptr = unary_expr
+                    unary_expr = self.builder.load(unary_expr_ptr)
+                    unary_expr = self.builder.add(unary_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(unary_expr, unary_expr_ptr)
+                return unary_expr, unary_expr_ptr
+            elif optr.getText() == '--':
+                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
+                if unary_expr_ptr is True:
+                    unary_expr_ptr = unary_expr
+                    unary_expr = self.builder.load(unary_expr_ptr)
+                    unary_expr = self.builder.sub(unary_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(unary_expr, unary_expr_ptr)
+                return unary_expr, unary_expr_ptr
+            elif optr.getText() == 'sizeof':
                 raise Exception()
-            elif operator.getText() == '&&':
+            elif optr.getText() == '&&':
                 raise Exception()
             else:
-                unary_expression, unary_expression_pointer = self.visit(ctx.children[1])
-                if operator.getText() == '&':
-                    return unary_expression_pointer, False
-                elif operator.getText() == '*':
-                    if unary_expression_pointer is True:
-                        unary_expression_pointer = unary_expression
-                        unary_expression = self.builder.load(unary_expression_pointer)
-                    return unary_expression, unary_expression_pointer
-                elif operator.getText() == '+':
-                    return unary_expression, False
-                elif operator.getText() == '-':
-                    return self.builder.neg(unary_expression), False
-                elif operator.getText() == '~':
-                    return self.builder.not_(unary_expression), False
-                elif operator.getText() == '!':
-                    if unary_expression.type != FLOAT_TYPE:
-                        return self.builder.icmp_signed(cmpop='==', lhs=unary_expression
+                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
+                if optr.getText() == '&':
+                    return unary_expr_ptr, False
+                elif optr.getText() == '*':
+                    if unary_expr_ptr is True:
+                        unary_expr_ptr = unary_expr
+                        unary_expr = self.builder.load(unary_expr_ptr)
+                    return unary_expr, unary_expr_ptr
+                elif optr.getText() == '+':
+                    return unary_expr, False
+                elif optr.getText() == '-':
+                    return self.builder.neg(unary_expr), False
+                elif optr.getText() == '~':
+                    return self.builder.not_(unary_expr), False
+                elif optr.getText() == '!':
+                    if unary_expr.type != FLOAT_TYPE:
+                        return self.builder.icmp_signed(cmpop='==', lhs=unary_expr
                                                         , rhs=ir.Constant(INT_TYPE, 0)), False
                     else:
-                        return self.builder.fcmp_ordered(cmpop='==', lhs=unary_expression
+                        return self.builder.fcmp_ordered(cmpop='==', lhs=unary_expr
                                                          , rhs=ir.Constant(FLOAT_TYPE, 0)), False
         else:
             raise Exception()
 
 
     def visit_FunctionDefinition(self, ctx):
-        funcType = self.visit(ctx.declarationSpecifiers())
-        funcName, params = self.visit(ctx.declarator())
-        llvmType = ir.FunctionType(funcType, [param[0] for param in params])
-        llvmFunc = ir.Function(self.module, llvmType, name=funcName)
-        self.symbol_table.insert(funcName, FUNCTION_TYPE, llvmFunc)
+        '''
+            functionDefinition
+            :   declarationSpecifiers? declarator declarationList? compoundStatement
+            ;
+        '''
+        func_type = self.visit(ctx.declarationSpecifiers())
+        func_name, params = self.visit(ctx.declarator())
+        llvm_type = ir.FunctionType(func_type, [param[0] for param in params])
+        llvm_func = ir.Function(self.module, llvm_type, name=func_name)
+        self.symbol_table.insert(func_name, FUNCTION_TYPE, llvm_func)
         self.symbol_table = self.symbol_table.addLevel()
         
-        block = llvmFunc.append_basic_block(name= funcName+"entry")
-        self.builder = ir.IRBuilder(block)
+        func_block = llvm_func.append_basic_block(name= func_name+"entry")
+        self.builder = ir.IRBuilder(func_block)
         
         for i, param in enumerate(params):
             param_type, param_name = param
-            address = self.builder.alloca(param_type, name=param_name)
-            self.builder.store(llvmFunc.args[i], address)
-            self.symbol_table.insert(param_name, param_type, address)
+            addr = self.builder.alloca(param_type, name=param_name)
+            self.builder.store(llvm_func.args[i], addr)
+            self.symbol_table.insert(param_name, param_type, addr)
         self.visit(ctx.compoundStatement())
         if not self.builder.block.is_terminated:
             self.builder.ret_void()
         self.symbol_table = self.symbol_table.exitLevel()
 
     def visit_Declarator(self, ctx: CParser.DeclaratorContext):  
+        '''
+            declarator
+            :   pointer? directDeclarator
+            ;
+        '''
         return self.visit(ctx.directDeclarator())
 
     def visit_DirectDeclarator(self, ctx: CParser.DirectDeclaratorContext):  
-        name = self.visit(ctx.getChild(0))
+        '''
+            directDeclarator
+            :   Identifier
+            |   '(' declarator ')'
+            |   directDeclarator '[' typeQualifierList? assignmentExpression? ']'
+            |   directDeclarator '[' 'static' typeQualifierList? assignmentExpression ']'
+            |   directDeclarator '[' typeQualifierList 'static' assignmentExpression ']'
+            |   directDeclarator '[' typeQualifierList? '*' ']'
+            |   directDeclarator '(' parameterTypeList ')'
+            |   directDeclarator '(' identifierList? ')'
+            |   Identifier ':' DigitSequence  
+            ;
+        '''
+        iden_name = self.visit(ctx.getChild(0))
         if ctx.Identifier():
-            self.symbol_table.insert(name, (BASE_TYPE, None))
-            return name
+            self.symbol_table.insert(iden_name, (BASE_TYPE, None))
+            return iden_name
         elif ctx.children[1].getText() == '[':
             length = self.visit(ctx.assignmentExpression())
             btype = (ARRAY_TYPE, length)
-            self.symbol_table.insert(name, type=btype)
-            return name
+            self.symbol_table.insert(iden_name, type=btype)
+            return iden_name
         elif ctx.children[1].getText() == '(':
             btype = (FUNCTION_TYPE, None)
-            self.symbol_table.insert(name, btype)
+            self.symbol_table.insert(iden_name, btype)
             params = self.visit(ctx.parameterTypeList()) if ctx.parameterTypeList() else []
-            return name, params
+            return iden_name, params
 
-    def visit_TypeSpecifier(self, ctx: CParser.TypeSpecifierContext):  
+    def visit_TypeSpecifier(self, ctx: CParser.TypeSpecifierContext):
+        '''
+            typeSpecifier
+            :   ('void'
+            |   'char'
+            |   'short'
+            |   'int'
+            |   'long'
+            |   'float'
+            |   'double'
+            |   'signed'
+            |   'unsigned')
+            |   structOrUnionSpecifier
+            |   enumSpecifier
+            |   typedefName
+            |   typeSpecifier pointer
+            ;
+        '''  
         if ctx.Void():
             return VOID_TYPE
         elif ctx.Char():
@@ -728,44 +778,84 @@ class myCVisitor(CVisitor):
             return self.visit(ctx.typedefName())
 
 
-    def visit_StructOrUnionSpecifier(self, ctx: CParser.StructOrUnionSpecifierContext):   
+    def visit_StructOrUnionSpecifier(self, ctx: CParser.StructOrUnionSpecifierContext): 
+        '''
+            structOrUnionSpecifier
+            :   structOrUnion Identifier? '{' structDeclarationList '}'
+            |   structOrUnion Identifier
+            ;
+        '''  
         if ctx.structDeclarationList():
             struct_name = ctx.Identifier().getText()
             if self.symbol_table.getValue(struct_name):
                 raise SemanticError("redefinition", ctx)
             else:
                 dec_list = self.visit(ctx.structDeclarationList())
-                paramList, typeList = [], []
+                param_list, type_list = [], []
                 for dec in dec_list:
-                    paramList.append({'name': dec['name'], 'type': dec['type']})
-                    typeList.append(dec['type'])
-                new_struct = ir.global_context.get_identified_type(name=struct_name)
-                new_struct.set_body(*typeList)
-                self.struct_table.insert(struct_name, new_struct, paramList)
-                return new_struct
+                    param_list.append({'name': dec['name'], 'type': dec['type']})
+                    type_list.append(dec['type'])
+                temp_struct = ir.global_context.get_identified_type(name=struct_name)
+                temp_struct.set_body(*type_list)
+                self.struct_table.insert(struct_name, temp_struct, param_list)
+                return temp_struct
         else:
             struct_name = ctx.Identifier().getText()
-            new_struct = ir.global_context.get_identified_type(name=struct_name)
-            return new_struct
+            temp_struct = ir.global_context.get_identified_type(name=struct_name)
+            return temp_struct
 
     def visit_TypedefName(self, ctx: CParser.TypedefNameContext):  
+        '''
+            typedefName
+            :   Identifier
+            ;
+        '''
         return ctx.getText()
 
     def visit_StructDeclarationList(self, ctx: CParser.StructDeclarationListContext):  
+        '''
+            structDeclaratorList
+            :   structDeclarator
+            |   structDeclaratorList ',' structDeclarator
+            ;
+        '''
         dec_list = self.visit(ctx.structDeclarationList()) if ctx.structDeclarationList() else []
         dec_list.append(self.visit(ctx.structDeclaration()))
         return dec_list
 
     def visit_StructDeclaration(self, ctx: CParser.StructDeclarationContext):  
+        '''
+            structDeclaration
+            :   specifierQualifierList structDeclaratorList? ';'
+            ;
+        '''
         return self.visit(ctx.specifierQualifierList())
 
-    def visit_StructDeclaratorList(self, ctx: CParser.StructDeclaratorListContext):  
+    def visit_StructDeclaratorList(self, ctx: CParser.StructDeclaratorListContext): 
+        '''
+            structDeclaratorList
+            :   structDeclarator
+            |   structDeclaratorList ',' structDeclarator
+            ;
+        ''' 
         return self.visit(ctx.structDeclarator())
 
-    def visit_StructDeclarator(self, ctx: CParser.StructDeclaratorContext):   
+    def visit_StructDeclarator(self, ctx: CParser.StructDeclaratorContext): 
+        '''
+            structDeclarator
+            :   declarator
+            |   declarator? ':' constantExpression
+            ;
+        '''  
         return self.visit(ctx.declarator())
 
     def visit_SpecifierQualifierList(self, ctx: CParser.SpecifierQualifierListContext):  
+        '''
+            specifierQualifierList
+            :   typeSpecifier specifierQualifierList?
+            |   typeQualifier specifierQualifierList?
+            ;
+        '''
         if not ctx.specifierQualifierList():
             return self.visit(ctx.typeSpecifier())
         else:
@@ -773,27 +863,51 @@ class myCVisitor(CVisitor):
                     'name': self.visit(ctx.children[1])}
 
     def visit_StructOrUnion(self, ctx: CParser.StructOrUnionContext):   
+        '''
+            structOrUnion
+            :   'struct'
+            |   'union'
+            ;
+        '''
         return ctx.getText()
 
     def visit_DeclarationSpecifiers(self, ctx):  
+        '''
+            declarationSpecifiers
+            :   declarationSpecifier+
+            ;
+        '''
         return self.visit(ctx.children[-1])
 
     def visit_DeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):  
+        '''
+            declarationSpecifier
+            :   storageClassSpecifier
+            |   typeSpecifier
+            |   typeQualifier
+            ;
+        '''
         return self.visit(ctx.children[0])
 
     def visit_Declaration(self, ctx):  
+        '''
+            declaration
+            :   declarationSpecifiers initDeclaratorList ';'
+            | 	declarationSpecifiers ';'
+            ;
+        '''
         _type = self.visit(ctx.declarationSpecifiers())
         if not ctx.initDeclaratorList():
             return ''
 
-        declarator_list = self.visit(ctx.initDeclaratorList())
-        for name, init_val in declarator_list:
+        dec_list = self.visit(ctx.initDeclaratorList())
+        for name, init_val in dec_list:
             # system function declaration
             if isinstance(name, tuple):
                 func_name, func_params = name
                 args = [arg for arg, _ in func_params]
-                fnty = ir.FunctionType(_type, args, var_arg=True)
-                func = ir.Function(self.module, fnty, name=func_name)
+                func_type = ir.FunctionType(_type, args, var_arg=True)
+                func = ir.Function(self.module, func_type, name=func_name)
                 self.symbol_table.insert(func_name, type=(FUNCTION_TYPE, None), value=func)
             # struct declaration
             elif type(_type) == ir.types.IdentifiedStructType:
@@ -803,6 +917,11 @@ class myCVisitor(CVisitor):
                 self.variableDeclaration(name, init_val, _type, ctx=ctx)
 
     def variableDeclaration(self, name, init_val, _type, ctx=None):
+        '''
+            declaration
+            :   declarationSpecifiers initDeclaratorList ';'
+            ;
+        '''
         myType = self.symbol_table.getType(name)
         # array declaration
         if myType[0] == ARRAY_TYPE:
@@ -840,52 +959,116 @@ class myCVisitor(CVisitor):
             self.symbol_table.insert(name, type=myType, value=value)
 
     def visit_CompoundStatement(self, ctx):
+        '''
+            compoundStatement
+            :   '{' blockItemList? '}'
+            ;
+        '''
         for i in ctx.children:
             self.visit(i)
 
     def visit_BlockItem(self, ctx):  
+        '''
+            blockItem
+            :   statement
+            |   declaration
+            ;
+        '''
         return self.visit(ctx.getChild(0))
 
     def visit_InitDeclaratorList(self, ctx):  
+        '''
+            initDeclaratorList
+            :   initDeclarator
+            |   initDeclaratorList ',' initDeclarator
+            ;
+        '''
         dec_list = self.visit(ctx.initDeclaratorList()) if ctx.initDeclaratorList() else []
         dec_list.append(self.visit(ctx.initDeclarator()))
         return dec_list
 
-    def visit_InitDeclarator(self, ctx):   
+    def visit_InitDeclarator(self, ctx):  
+        '''
+            initDeclarator
+            :   declarator
+            |   declarator '=' initializer
+            ;
+        ''' 
         if ctx.initializer():
             return self.visit(ctx.declarator()), self.visit(ctx.initializer())
         else:
             return self.visit(ctx.declarator()), None
 
     def visit_Initializer(self, ctx):   
+        '''
+            initializer
+            :   assignmentExpression
+            |   '{' initializerList '}'
+            |   '{' initializerList ',' '}'
+            ;
+        '''
         if ctx.assignmentExpression():
             return self.visit(ctx.assignmentExpression())
         elif ctx.initializerList():
             return self.visit(ctx.initializerList())
 
     def visit_InitializerList(self, ctx: CParser.InitializerListContext):  
+        '''
+            initializerList
+            :   designation? initializer
+            |   initializerList ',' designation? initializer
+            ;
+        '''
         init_list = [self.visit(ctx.initializer())]
         if ctx.initializerList():
             init_list = self.visit(ctx.initializerList()) + init_list
         return init_list
 
-    def visit_ParameterTypeList(self, ctx: CParser.ParameterTypeListContext):  
+    def visit_ParameterTypeList(self, ctx: CParser.ParameterTypeListContext): 
+        '''
+            parameterTypeList
+            :   parameterList
+            |   parameterList ',' '...'
+            ;
+        ''' 
         if ctx.parameterList():
             return self.visit(ctx.parameterList())
 
     def visit_ParameterList(self, ctx: CParser.ParameterListContext):  
-        paramList = self.visit(ctx.parameterList()) if ctx.parameterList() else []
-        new_param = self.visit(ctx.parameterDeclaration())
-        paramList.append(new_param)
-        return paramList
+        '''
+            parameterList
+            :   parameterDeclaration
+            |   parameterList ',' parameterDeclaration
+            ;
+        '''
+        param_list = self.visit(ctx.parameterList()) if ctx.parameterList() else []
+        temp_param = self.visit(ctx.parameterDeclaration())
+        param_list.append(temp_param)
+        return param_list
 
-    def visit_ParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext):  
+    def visit_ParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext): 
+        '''
+            parameterDeclaration
+            :   declarationSpecifiers declarator
+            |   declarationSpecifiers2 abstractDeclarator?
+            ;
+        ''' 
         return [self.visit(ctx.declarationSpecifiers()), self.visit(ctx.declarator())]
 
     def visit_Terminal(self, node):  
+        '''
+            TODO
+        '''
         return node.getText()
 
     def visit_JumpStatement(self, ctx:CParser.JumpStatementContext):
+        '''
+            jumpStatement
+            :   continueStatement
+            |   breakStatement
+            |   returnStatement
+            ;
+        '''
         if ctx.breakStatement():
             self.visitBreakStatement(ctx.breakStatement())
         elif ctx.returnStatement():
@@ -894,24 +1077,46 @@ class myCVisitor(CVisitor):
             self.visitContinueStatement(ctx.continueStatement())
 
     def visit_ContinueStatement(self, ctx: CParser.ContinueStatementContext):
+        '''
+            continueStatement
+            :   'continue' ';'
+            ;
+        '''
         if self.continue_to is not None:
             self.builder.branch(self.continue_to)
         else:
             raise SemanticError("No way to continue!\n", ctx)
 
     def visit_BreakStatement(self, ctx: CParser.BreakStatementContext):
+        '''
+            breakStatement
+            :   'break' ';'
+            ;
+        '''
         if self.break_to is not None:
             self.builder.branch(self.break_to)
         else:
             raise SemanticError("No way to break!\n", ctx)
 
     def visit_ReturnStatement(self, ctx: CParser.ReturnStatementContext):
+        '''
+            returnStatement
+            :   'return' expression? ';'
+            ;
+        '''
         if ctx.expression():
             self.builder.ret(self.visit(ctx.expression()))
         else:
             self.builder.ret_void()
 
     def visit_IterationStatement(self, ctx:CParser.IterationStatementContext):
+        '''
+            iterationStatement
+            :   whileStatement
+            |   doWhileStatement
+            |   forStatement
+            ;
+        '''
         if ctx.whileStatement():
             self.visitWhileStatement(ctx.whileStatement())
         elif ctx.forStatement():
@@ -920,6 +1125,11 @@ class myCVisitor(CVisitor):
             self.visitDoWhileStatement(ctx.doWhileStatement())
 
     def visit_WhileStatement(self, ctx:CParser.WhileStatementContext):
+        '''
+            whileStatement
+            :   While '(' expression ')' statement
+            ;
+        '''
         self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
@@ -927,8 +1137,8 @@ class myCVisitor(CVisitor):
         stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
         quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
 
-        lst_continue_to = self.continue_to
-        lst_break_to = self.break_to
+        last_continue_to = self.continue_to
+        last_break_to = self.break_to
         self.continue_to = cond_block
         self.break_to = quit_block
 
@@ -950,11 +1160,16 @@ class myCVisitor(CVisitor):
         # The quit block
         self.builder.position_at_start(quit_block)
 
-        self.continue_to = lst_continue_to
-        self.break_to = lst_break_to
+        self.continue_to = last_continue_to
+        self.break_to = last_break_to
         self.symbol_table = self.symbol_table.exitLevel()
 
     def visit_DoWhileStatement(self, ctx:CParser.DoWhileStatementContext):
+        '''
+            doWhileStatement
+            :   Do statement While '(' expression ')' ';'
+            ;
+        '''
         self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
@@ -962,8 +1177,8 @@ class myCVisitor(CVisitor):
         cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
         quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
 
-        lst_continue_to = self.continue_to
-        lst_break_to = self.break_to
+        last_continue_to = self.continue_to
+        last_break_to = self.break_to
         self.continue_to = cond_block
         self.break_to = quit_block
 
@@ -975,19 +1190,24 @@ class myCVisitor(CVisitor):
         # The condition expression of While
         self.builder.branch(cond_block)
         self.builder.position_at_start(cond_block)
-        expression = self.visit(ctx.expression())
+        expr = self.visit(ctx.expression())
 
         # Judge if jump to statement or quit
-        self.builder.cbranch(expression, stat_block, quit_block)
+        self.builder.cbranch(expr, stat_block, quit_block)
 
         # The quit block
         self.builder.position_at_start(quit_block)
 
-        self.continue_to = lst_continue_to
-        self.break_to = lst_break_to
+        self.continue_to = last_continue_to
+        self.break_to = last_break_to
         self.symbol_table = self.symbol_table.exitLevel()
 
     def visit_ForStatement(self, ctx:CParser.ForStatementContext):
+        '''
+            forStatement
+            :   For '(' forCondition ')' statement
+            ;
+        '''
         self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
@@ -995,37 +1215,42 @@ class myCVisitor(CVisitor):
         stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
         quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
 
-        lst_continue_to = self.continue_to
-        lst_break_to = self.break_to
+        last_continue_to = self.continue_to
+        last_break_to = self.break_to
         self.continue_to = cond_block
         self.break_to = quit_block
 
-        condition_expression, op_expression = self.visit(ctx.forCondition())
+        cond_expr, op_expr = self.visit(ctx.forCondition())
 
         # The condition of For
         self.builder.branch(cond_block)
         self.builder.position_at_start(cond_block)
-        condition_value = self.visit(condition_expression)
+        cond_value = self.visit(cond_expr)
 
-        self.builder.cbranch(condition_value, stat_block, quit_block)
+        self.builder.cbranch(cond_value, stat_block, quit_block)
         self.builder.position_at_start(stat_block)
         self.visit(ctx.statement())
 
-        if op_expression:
-            self.visit(op_expression)
+        if op_expr:
+            self.visit(op_expr)
 
         # come back to the cond
         self.builder.branch(cond_block)
 
         # quit block
         self.builder.position_at_start(quit_block)
-        self.continue_to = lst_continue_to
-        self.break_to = lst_break_to
+        self.continue_to = last_continue_to
+        self.break_to = last_break_to
 
         self.symbol_table = self.symbol_table.exitLevel()
 
     def visit_ForCondition(self, ctx: CParser.ForConditionContext):
-        
+        '''
+            forCondition
+            :   forDeclaration ';' forExpression? ';' forExpression?
+            |   expression? ';' forExpression? ';' forExpression?
+            ;
+        '''
         if ctx.forDeclaration():
             self.visit(ctx.forDeclaration())
         elif ctx.expression():
@@ -1033,21 +1258,36 @@ class myCVisitor(CVisitor):
         return ctx.forExpression(0), ctx.forExpression(1)
 
     def visit_ForDeclaration(self, ctx: CParser.ForDeclarationContext):
-        
+        '''
+            forDeclaration
+            :   declarationSpecifiers initDeclaratorList
+            | 	declarationSpecifiers
+            ;
+        '''
         _type = self.visit(ctx.declarationSpecifiers())
-        declarator_list = self.visit(ctx.initDeclaratorList())
+        dec_list = self.visit(ctx.initDeclaratorList())
 
-        for name, init_val in declarator_list:
+        for name, init_val in dec_list:
             self.variableDeclaration(name, init_val, _type)
 
     def visit_SelectionStatement(self, ctx: CParser.SelectionStatementContext):
-        
+        '''
+            selectionStatement
+            :   ifStatement
+            |   switchStatement
+            ;
+        '''
         if ctx.ifStatement():
             self.visitIfStatement(ctx.ifStatement())
         elif ctx.switchStatement():
             self.visitSwitchStatement(ctx.switchStatement())
 
     def visit_IfStatement(self, ctx: CParser.IfStatementContext):
+        '''
+            ifStatement
+            :   'if' '(' expression ')' statement ('else' statement)?
+            ;
+        '''
         if len(ctx.statement()) > 1:  # else or elif exist
             self.symbol_table.addLevel()
 
@@ -1121,15 +1361,19 @@ class myCVisitor(CVisitor):
             self.symbol_table.exitLevel()
 
     def visit_SwitchStatement(self, ctx: CParser.SwitchStatementContext):
-    
+        '''
+            switchStatement
+            :   'switch' '(' expression ')' statement
+            ;
+        '''
         block_name = self.builder.block.name
         head_block = self.builder.append_basic_block(name="head".format(block_name))
         stat_block = self.builder.append_basic_block(name="head".format(block_name))
         quit_block = self.builder.append_basic_block(name="quit".format(block_name))
 
-        lst_break_to = self.break_to
+        last_break_to = self.break_to
         self.break_to = quit_block
-        lst_switch_val = self.switch_val
+        last_switch_val = self.switch_val
 
         self.builder.branch(head_block)
         self.builder.position_at_start(head_block)
@@ -1144,10 +1388,17 @@ class myCVisitor(CVisitor):
         self.builder.branch(quit_block)
         self.builder.position_at_start(quit_block)
 
-        self.switch_val = lst_switch_val
-        self.break_to = lst_break_to
+        self.switch_val = last_switch_val
+        self.break_to = last_break_to
 
     def visit_LabeledStatement(self, ctx:CParser.LabeledStatementContext):
+        '''
+            labeledStatement
+            :   Identifier ':' statement
+            |   'case' constantExpression ':' statement
+            |   'default' ':' statement
+            ;
+        '''
         if ctx.Case():
             if self.switch_val:
                 if self.switch_val != self.visit(ctx.constantExpression()):
