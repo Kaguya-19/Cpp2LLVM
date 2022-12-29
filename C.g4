@@ -44,8 +44,6 @@ postfixExpression
     |   postfixExpression '->' Identifier
     |   postfixExpression '++'
     |   postfixExpression '--'
-    |   '(' typeName ')' '{' initializerList '}'
-    |   '(' typeName ')' '{' initializerList ',' '}'
     ;
 
 argumentExpressionList
@@ -58,8 +56,6 @@ unaryExpression
     |   '++' unaryExpression
     |   '--' unaryExpression
     |   unaryOperator castExpression
-    |   'sizeof' unaryExpression
-    |   'sizeof' '(' typeName ')'
     ;
 
 unaryOperator
@@ -69,7 +65,6 @@ unaryOperator
 castExpression
     :   '(' typeName ')' castExpression
     |   unaryExpression
-    |   DigitSequence // for
     ;
 
 multiplicativeExpression
@@ -137,7 +132,6 @@ conditionalExpression
 assignmentExpression
     :   conditionalExpression
     |   unaryExpression assignmentOperator assignmentExpression
-    |   DigitSequence // for
     ;
 
 assignmentOperator

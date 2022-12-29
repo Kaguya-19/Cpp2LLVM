@@ -8,15 +8,15 @@ declare i32 @"memset"(i32* %".1", i32 %".2", i32 %".3", ...)
 
 declare i32 @"memcpy"(i32* %".1", i32* %".2", i32 %".3", ...)
 
-define void @"swap"(i32* %"a.1", i32 %"i.1", i32 %"j.1")
+define void @"swap"(i32* %".1", i32 %".2", i32 %".3")
 {
 swapentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"i" = alloca i32
-  store i32 %"i.1", i32* %"i"
+  store i32 %".2", i32* %"i"
   %"j" = alloca i32
-  store i32 %"j.1", i32* %"j"
+  store i32 %".3", i32* %"j"
   %".8" = load i32*, i32** %"a"
   %".9" = load i32, i32* %".8"
   %".10" = bitcast i32* %".8" to [0 x i32]*
@@ -49,13 +49,13 @@ swapentry:
   ret void
 }
 
-define void @"insertSort"(i32* %"a.1", i32 %"n.1")
+define void @"insertSort"(i32* %".1", i32 %".2")
 {
 insertSortentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"n" = alloca i32
-  store i32 %"n.1", i32* %"n"
+  store i32 %".2", i32* %"n"
   %"j" = alloca i32
   store i32 0, i32* %"j"
   %"k" = alloca i32
@@ -135,15 +135,15 @@ quit.1:
   br label %"cond"
 }
 
-define void @"quickSort"(i32* %"a.1", i32 %"l.1", i32 %"r.1")
+define void @"quickSort"(i32* %".1", i32 %".2", i32 %".3")
 {
 quickSortentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"l" = alloca i32
-  store i32 %"l.1", i32* %"l"
+  store i32 %".2", i32* %"l"
   %"r" = alloca i32
-  store i32 %"r.1", i32* %"r"
+  store i32 %".3", i32* %"r"
   br label %"cond"
 cond:
   %".9" = load i32, i32* %"r"
@@ -271,13 +271,13 @@ quit.4:
   ret void
 }
 
-define void @"shellSort"(i32* %"a.1", i32 %"n.1")
+define void @"shellSort"(i32* %".1", i32 %".2")
 {
 shellSortentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"n" = alloca i32
-  store i32 %"n.1", i32* %"n"
+  store i32 %".2", i32* %"n"
   %"i" = alloca i32
   %"j" = alloca i32
   %"gap" = alloca i32
@@ -377,17 +377,17 @@ quit.2:
   br label %"cond.1"
 }
 
-define void @"merge"(i32* %"a.1", i32 %"l.1", i32 %"m.1", i32 %"r.1")
+define void @"merge"(i32* %".1", i32 %".2", i32 %".3", i32 %".4")
 {
 mergeentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"l" = alloca i32
-  store i32 %"l.1", i32* %"l"
+  store i32 %".2", i32* %"l"
   %"m" = alloca i32
-  store i32 %"m.1", i32* %"m"
+  store i32 %".3", i32* %"m"
   %"r" = alloca i32
-  store i32 %"r.1", i32* %"r"
+  store i32 %".4", i32* %"r"
   %".10" = load i32, i32* %"l"
   %".11" = load i32, i32* %"m"
   %".12" = add i32 %".11", 1
@@ -569,15 +569,15 @@ quit.4:
   ret void
 }
 
-define void @"mergeSort"(i32* %"a.1", i32 %"l.1", i32 %"r.1")
+define void @"mergeSort"(i32* %".1", i32 %".2", i32 %".3")
 {
 mergeSortentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"l" = alloca i32
-  store i32 %"l.1", i32* %"l"
+  store i32 %".2", i32* %"l"
   %"r" = alloca i32
-  store i32 %"r.1", i32* %"r"
+  store i32 %".3", i32* %"r"
   br label %"cond"
 cond:
   %".9" = load i32, i32* %"r"
@@ -610,13 +610,13 @@ quit:
   ret void
 }
 
-define void @"radixSort"(i32* %"a.1", i32 %"n.1")
+define void @"radixSort"(i32* %".1", i32 %".2")
 {
 radixSortentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"n" = alloca i32
-  store i32 %"n.1", i32* %"n"
+  store i32 %".2", i32* %"n"
   %"i" = alloca i32
   %"exp" = alloca i32
   store i32 1, i32* %"exp"
@@ -801,13 +801,13 @@ quit.5:
   br label %"cond.2"
 }
 
-define void @"print"(i32* %"a.1", i32 %"n.1")
+define void @"print"(i32* %".1", i32 %".2")
 {
 printentry:
   %"a" = alloca i32*
-  store i32* %"a.1", i32** %"a"
+  store i32* %".1", i32** %"a"
   %"n" = alloca i32
-  store i32 %"n.1", i32* %"n"
+  store i32 %".2", i32* %"n"
   %"i" = alloca i32
   store i32 0, i32* %"i"
   br label %"cond"

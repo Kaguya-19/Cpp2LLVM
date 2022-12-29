@@ -98,7 +98,6 @@ class myCVisitor(CVisitor):
         self.symbol_table = SymbolTable()
         self.continue_to = None
         self.break_to = None
-        self.switch_val = None
         self.struct_table = StructTable()
     
     def visitPrimaryExpression(self, ctx: CParser.PrimaryExpressionContext):
@@ -115,7 +114,7 @@ class myCVisitor(CVisitor):
                 temp_iden = ctx.Identifier().getText()
                 iden_value = self.symbol_table.getValue(temp_iden)
                 if iden_value is None:
-                    raise SemanticError("identifier not found", ctx)
+                    raise SemanticError("undefined variable " + temp_iden, ctx)
                 return iden_value, True
             elif ctx.Constant():
                 temp_const = ctx.Constant().getText()
@@ -150,8 +149,6 @@ class myCVisitor(CVisitor):
             |   postfixExpression '->' Identifier
             |   postfixExpression '++'
             |   postfixExpression '--'
-            |   '(' typeName ')' '{' initializerList '}'
-            |   '(' typeName ')' '{' initializerList ',' '}'
             ;
         '''
         if len(ctx.children) == 1:
@@ -201,18 +198,16 @@ class myCVisitor(CVisitor):
                     postfix_expr_ptr = postfix_expr
                     postfix_expr = self.builder.load(postfix_expr_ptr)
                     self.builder.store(postfix_expr, postfix_expr_ptr)
-                    temp_expr = self.builder.add(postfix_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(temp_expr, postfix_expr_ptr)
-                    return postfix_expr, postfix_expr_ptr
+                    edited = self.builder.add(postfix_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(edited, postfix_expr_ptr)
+                    return postfix_expr, False
                 elif ctx.children[1].getText() == '--':
                     postfix_expr_ptr = postfix_expr
                     postfix_expr = self.builder.load(postfix_expr_ptr)
                     self.builder.store(postfix_expr, postfix_expr_ptr)
-                    temp_expr = self.builder.sub(postfix_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(temp_expr, postfix_expr_ptr)
-                    return postfix_expr, postfix_expr_ptr
-
-        raise Exception()
+                    edited = self.builder.sub(postfix_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(edited, postfix_expr_ptr)
+                    return postfix_expr, False
         
 
     def visitArgumentExpressionList(self, ctx: CParser.ArgumentExpressionListContext):
@@ -233,7 +228,6 @@ class myCVisitor(CVisitor):
             assignmentExpression
             :   conditionalExpression
             |   unaryExpression assignmentOperator assignmentExpression
-            |   DigitSequence // for
             ;   
         '''
         if len(ctx.children) == 1:
@@ -277,62 +271,6 @@ class myCVisitor(CVisitor):
                 elif assign_optr == '%=':
                     edited = self.builder.srem(origin, assign_expr)
                     return self.builder.store(edited, unary_expr)
-            else:
-                raise Exception()
-
-    def visitConditionalExpression(self, ctx: CParser.ConditionalExpressionContext):
-        '''
-            conditionalExpression
-            :   logicalOrExpression ('?' expression ':' conditionalExpression)?
-            ;
-        '''
-        oror_expr = self.visit(ctx.children[0])
-        if len(ctx.children) == 1:
-            return oror_expr
-        elif len(ctx.children) == 5:
-            questionmark = ctx.children[1]
-            expr = self.visit(ctx.children[2])
-            colon = ctx.children[3]
-            condition_expr = self.visit(ctx.children[4])
-            if questionmark.getText() != '?' or colon.getText() != ':':
-                raise Exception()
-            else:
-                raise Exception()
-        else:
-            raise Exception()
-
-
-    def visitLogicalAndExpression(self, ctx: CParser.LogicalAndExpressionContext):
-        '''
-            logicalAndExpression
-            :   inclusiveOrExpression
-            |   logicalAndExpression '&&' inclusiveOrExpression
-            ;
-        '''
-        inc_or_expr = self.visit(ctx.children[len(ctx.children) - 1])
-        if len(ctx.children) == 1:
-            return inc_or_expr
-        elif len(ctx.children) == 3:
-            andand_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if optr_expr.getText() != '&&':
-                raise Exception()
-            else:
-                if inc_or_expr.type != FLOAT_TYPE:
-                    inc_or_expr = self.builder.icmp_signed(cmpop='!=', lhs=inc_or_expr
-                                                                       , rhs=ir.Constant(INT_TYPE, 0))
-                else:
-                    inc_or_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=inc_or_expr
-                                                                        , rhs=ir.Constant(FLOAT_TYPE, 0))
-                if andand_expr.type != FLOAT_TYPE:
-                    andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
-                                                                      , rhs=ir.Constant(INT_TYPE, 0))
-                else:
-                    andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
-                                                                       , rhs=ir.Constant(FLOAT_TYPE, 0))
-                return self.builder.and_(andand_expr, inc_or_expr)
-        else:
-            raise Exception()
 
     def visitInclusiveOrExpression(self, ctx: CParser.InclusiveOrExpressionContext):
         '''
@@ -346,13 +284,7 @@ class myCVisitor(CVisitor):
             return exc_or_expr
         elif len(ctx.children) == 3:
             inc_or_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if optr_expr.getText() != '|':
-                raise Exception()
-            else:
-                return self.builder.or_(inc_or_expr, exc_or_expr)
-        else:
-            raise Exception()
+            return self.builder.or_(inc_or_expr, exc_or_expr)
 
     def visitExclusiveOrExpression(self, ctx: CParser.ExclusiveOrExpressionContext):
         '''
@@ -366,13 +298,7 @@ class myCVisitor(CVisitor):
             return and_expr
         elif len(ctx.children) == 3:
             exc_or_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if optr_expr.getText() != '^':
-                raise Exception()
-            else:
-                return self.builder.xor(exc_or_expr, and_expr)
-        else:
-            raise Exception()
+            return self.builder.xor(exc_or_expr, and_expr)
 
     def visitAndExpression(self, ctx: CParser.AndExpressionContext):
         '''
@@ -386,34 +312,33 @@ class myCVisitor(CVisitor):
             return equ_expr
         elif len(ctx.children) == 3:
             and_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if optr_expr.getText() != '&':
-                raise Exception()
-            else:
-                return self.builder.and_(and_expr, equ_expr)
-        else:
-            raise Exception()
-
-    def visitConditionalExpression(self, ctx: CParser.ConditionalExpressionContext):
-        '''
-            conditionalExpression
-            :   logicalOrExpression ('?' expression ':' conditionalExpression)?
+            return self.builder.and_(and_expr, equ_expr)
+        
+    def visitLogicalAndExpression(self, ctx: CParser.LogicalAndExpressionContext):
+            '''
+            logicalAndExpression
+            :   inclusiveOrExpression
+            |   logicalAndExpression '&&' inclusiveOrExpression
             ;
-        '''
-        oror_expr = self.visit(ctx.children[0])
-        if len(ctx.children) == 1:
-            return oror_expr
-        elif len(ctx.children) == 5:
-            questionmark = ctx.children[1]
-            expr = self.visit(ctx.children[2])
-            operator_expr_colon = ctx.children[3]
-            cond_expr = self.visit(ctx.children[4])
-            if questionmark.getText() != '?' or operator_expr_colon.getText() != ':':
-                raise Exception()
+            '''
+            inc_or_expr = self.visit(ctx.children[len(ctx.children) - 1])
+            if len(ctx.children) == 1:
+                return inc_or_expr
+            elif len(ctx.children) == 3:
+                andand_expr = self.visit(ctx.children[0])
+            if inc_or_expr.type != FLOAT_TYPE:
+                inc_or_expr = self.builder.icmp_signed(cmpop='!=', lhs=inc_or_expr
+                                                                   , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                return expr
-        else:
-            raise Exception()
+                inc_or_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=inc_or_expr
+                                                                    , rhs=ir.Constant(FLOAT_TYPE, 0))
+            if andand_expr.type != FLOAT_TYPE:
+                andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
+                                                                  , rhs=ir.Constant(INT_TYPE, 0))
+            else:
+                andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
+                                                                   , rhs=ir.Constant(FLOAT_TYPE, 0))
+            return self.builder.and_(andand_expr, inc_or_expr)
 
     def visitLogicalOrExpression(self, ctx: CParser.LogicalOrExpressionContext):
         '''
@@ -427,26 +352,34 @@ class myCVisitor(CVisitor):
             return andand_expr
         elif len(ctx.children) == 3:
             oror_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if optr_expr.getText() != '||':
-                raise Exception()
+            if oror_expr.type != FLOAT_TYPE:
+                oror_expr = self.builder.icmp_signed(cmpop='!=', lhs=oror_expr
+                                                                 , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                if oror_expr.type != FLOAT_TYPE:
-                    oror_expr = self.builder.icmp_signed(cmpop='!=', lhs=oror_expr
-                                                                     , rhs=ir.Constant(INT_TYPE, 0))
-                else:
-                    oror_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=oror_expr
-                                                                      , rhs=ir.Constant(FLOAT_TYPE, 0))
-                if andand_expr.type != FLOAT_TYPE:
-                    andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
-                                                                      , rhs=ir.Constant(INT_TYPE, 0))
-                else:
-                    andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
-                                                                       , rhs=ir.Constant(FLOAT_TYPE, 0))
-                return self.builder.or_(oror_expr, andand_expr)
-        else:
-            raise Exception()
-
+                oror_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=oror_expr
+                                                                  , rhs=ir.Constant(FLOAT_TYPE, 0))
+            if andand_expr.type != FLOAT_TYPE:
+                andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
+                                                                  , rhs=ir.Constant(INT_TYPE, 0))
+            else:
+                andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
+                                                                   , rhs=ir.Constant(FLOAT_TYPE, 0))
+            return self.builder.or_(oror_expr, andand_expr)
+        
+    def visitConditionalExpression(self, ctx: CParser.ConditionalExpressionContext):
+        '''
+            conditionalExpression
+            :   logicalOrExpression ('?' expression ':' conditionalExpression)?
+            ;
+        '''
+        oror_expr = self.visit(ctx.children[0])
+        if len(ctx.children) == 1:
+            return oror_expr
+        elif len(ctx.children) == 5:
+            expr = self.visit(ctx.children[2])
+            condition_expr = self.visit(ctx.children[4])
+            return self.builder.select(oror_expr, expr, condition_expr)
+        
     def visitEqualityExpression(self, ctx: CParser.EqualityExpressionContext):
         '''
             equalityExpression
@@ -471,8 +404,6 @@ class myCVisitor(CVisitor):
             else:
                 return self.builder.icmp_signed(cmpop=optr_expr.getText(), lhs=equ_expr
                                                 , rhs=rel_expr)
-        else:
-            raise Exception()
 
 
     def visitRelationalExpression(self, ctx: CParser.RelationalExpressionContext):
@@ -486,7 +417,6 @@ class myCVisitor(CVisitor):
             ;
         '''
         shift_expr = self.visit(ctx.children[len(ctx.children)-1])
-        shift_type = shift_expr.type
         if len(ctx.children) == 1:
             return shift_expr
         elif len(ctx.children) == 3:
@@ -502,8 +432,6 @@ class myCVisitor(CVisitor):
             else:
                 return self.builder.icmp_signed(cmpop=optr_expr.getText(), lhs=rel_expr
                                                 , rhs=shift_expr)
-        else:
-            raise Exception()
 
 
     def visitShiftExpression(self, ctx: CParser.ShiftExpressionContext):
@@ -523,8 +451,7 @@ class myCVisitor(CVisitor):
                 return self.builder.shl(shift_expr, add_expr)
             elif ctx.children[1].getText() == '>>':
                 return self.builder.ashr(shift_expr, add_expr)
-        else:
-            raise Exception()
+
 
     def visitAdditiveExpression(self, ctx: CParser.AdditiveExpressionContext):
         '''
@@ -543,8 +470,7 @@ class myCVisitor(CVisitor):
                 return self.builder.add(add_expr, mul_expr)
             elif ctx.children[1].getText() == '-':
                 return self.builder.sub(add_expr, mul_expr)
-        else:
-            raise Exception()
+
 
     def visitMultiplicativeExpression(self, ctx: CParser.MultiplicativeExpressionContext):
         '''
@@ -566,8 +492,7 @@ class myCVisitor(CVisitor):
                 return self.builder.sdiv(mul_expr, cast_expr)
             elif ctx.children[1].getText() == '%':
                 return self.builder.srem(mul_expr, cast_expr)
-        else:
-            raise Exception()
+
 
     def visitCastExpression(self, ctx: CParser.CastExpressionContext):
         '''
@@ -584,13 +509,10 @@ class myCVisitor(CVisitor):
                 unary_expr = self.builder.load(unary_expr_ptr)
             return unary_expr, unary_expr_ptr
         elif len(ctx.children) == 4 or len(ctx.children) == 5:
-            if ctx.children[len(ctx.children)-4] != '(' or ctx.children[len(ctx.children)-2] != ')':
-                raise Exception()
-            else:
-                cast_expr, cast_expr_pointer = self.visit(ctx.children[len(ctx.children)-1])
-                type_name = self.visit(ctx.children[len(ctx.children)-3])
-                cast_expr = self.builder.bitcast(cast_expr, type_name)
-                return cast_expr, cast_expr_pointer
+            cast_expr, cast_expr_pointer = self.visit(ctx.children[len(ctx.children)-1])
+            type_name = self.visit(ctx.children[len(ctx.children)-3])
+            cast_expr = self.builder.bitcast(cast_expr, type_name)
+            return cast_expr, cast_expr_pointer
 
     def visitUnaryExpression(self, ctx: CParser.UnaryExpressionContext):
         '''
@@ -599,8 +521,6 @@ class myCVisitor(CVisitor):
             |   '++' unaryExpression
             |   '--' unaryExpression
             |   unaryOperator castExpression
-            |   'sizeof' unaryExpression
-            |   'sizeof' '(' typeName ')'
             ;
         '''
         if len(ctx.children) == 1:
@@ -624,10 +544,6 @@ class myCVisitor(CVisitor):
                     unary_expr = self.builder.sub(unary_expr, ir.Constant(INT_TYPE, 1))
                     self.builder.store(unary_expr, unary_expr_ptr)
                 return unary_expr, unary_expr_ptr
-            elif optr.getText() == 'sizeof':
-                raise Exception()
-            elif optr.getText() == '&&':
-                raise Exception()
             else:
                 unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
                 if optr.getText() == '&':
@@ -650,8 +566,6 @@ class myCVisitor(CVisitor):
                     else:
                         return self.builder.fcmp_ordered(cmpop='==', lhs=unary_expr
                                                          , rhs=ir.Constant(FLOAT_TYPE, 0)), False
-        else:
-            raise Exception()
 
 
     def visitFunctionDefinition(self, ctx):
@@ -728,7 +642,6 @@ class myCVisitor(CVisitor):
             |   'signed'
             |   'unsigned')
             |   structOrUnionSpecifier
-            |   enumSpecifier
             |   typedefName
             |   typeSpecifier pointer
             ;
@@ -762,13 +675,13 @@ class myCVisitor(CVisitor):
         if ctx.structDeclarationList():
             struct_name = ctx.Identifier().getText()
             if self.symbol_table.getValue(struct_name):
-                raise SemanticError("redefinition", ctx)
+                raise SemanticError("Redefinition of struct '{}'".format(struct_name))
             else:
                 dec_list = self.visit(ctx.structDeclarationList())
                 param_list, type_list = [], []
                 for dec in dec_list:
-                    param_list.append({'name': dec['name'], 'type': dec['type']})
-                    type_list.append(dec['type'])
+                    param_list.append({'name': dec[1], 'type': dec[0]})
+                    type_list.append(dec[0])
                 temp_struct = ir.global_context.get_identified_type(name=struct_name)
                 temp_struct.set_body(*type_list)
                 self.struct_table.insert(struct_name, temp_struct, param_list)
@@ -833,8 +746,7 @@ class myCVisitor(CVisitor):
         if not ctx.specifierQualifierList():
             return self.visit(ctx.typeSpecifier())
         else:
-            return {'type': self.visit(ctx.children[0]),
-                    'name': self.visit(ctx.children[1])}
+            return ( self.visit(ctx.children[0]),self.visit(ctx.children[1]))
 
     def visitStructOrUnion(self, ctx: CParser.StructOrUnionContext):   
         '''
@@ -910,7 +822,7 @@ class myCVisitor(CVisitor):
             if init_val:
                 l = len(init_val)
                 if l > length.constant:
-                    raise SemanticError("length of initialization exceed length of array", ctx)
+                    raise SemanticError("Array length is too long", ctx)
 
                 for i in range(l):
                     indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, i)]
@@ -920,7 +832,7 @@ class myCVisitor(CVisitor):
             temp_ptr = self.builder.alloca(value.type)
             self.builder.store(value, temp_ptr)
             value = temp_ptr
-            self.symbol_table.insert(name, type=myType, value=value)
+            self.symbol_table.insert(name, myType, value)
         else:
             if self.builder:
                 value = self.builder.alloca(_type, name=name)
@@ -930,7 +842,7 @@ class myCVisitor(CVisitor):
             if init_val:
                 self.builder.store(init_val, value)
 
-            self.symbol_table.insert(name, type=myType, value=value)
+            self.symbol_table.insert(name, myType, value)
 
     def visitCompoundStatement(self, ctx):
         '''
@@ -1056,7 +968,7 @@ class myCVisitor(CVisitor):
         if self.continue_to is not None:
             self.builder.branch(self.continue_to)
         else:
-            raise SemanticError("No way to continue!\n", ctx)
+            raise SemanticError("Wrong continue!\n", ctx)
 
     def visitBreakStatement(self, ctx: CParser.BreakStatementContext):
         '''
@@ -1067,7 +979,7 @@ class myCVisitor(CVisitor):
         if self.break_to is not None:
             self.builder.branch(self.break_to)
         else:
-            raise SemanticError("No way to break!\n", ctx)
+            raise SemanticError("Wrong break!\n", ctx)
 
     def visitReturnStatement(self, ctx: CParser.ReturnStatementContext):
         '''
@@ -1327,8 +1239,8 @@ class myCVisitor(CVisitor):
 
             self.symbol_table.exitLevel()
 
-    def output(self):
-        return repr(self.module)
+    def print(self):
+        return self.module.__str__()
 
 
 
@@ -1345,7 +1257,7 @@ def main(argv):
     visitor.visit(tree)
 
     with open(argv[2], 'w', encoding='utf-8') as f:
-        f.write(visitor.output())
+        f.write(visitor.print())
 
 
 if __name__ == '__main__':

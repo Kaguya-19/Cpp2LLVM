@@ -299,11 +299,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#labeledStatement.
-    def visitLabeledStatement(self, ctx:CParser.LabeledStatementContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#compoundStatement.
     def visitCompoundStatement(self, ctx:CParser.CompoundStatementContext):
         return self.visitChildren(ctx)
@@ -331,11 +326,6 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#ifStatement.
     def visitIfStatement(self, ctx:CParser.IfStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#switchStatement.
-    def visitSwitchStatement(self, ctx:CParser.SwitchStatementContext):
         return self.visitChildren(ctx)
 
 
