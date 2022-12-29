@@ -1,4 +1,4 @@
-; ModuleID = ""
+; ModuleID = "main"
 target triple = "x86_64-pc-linux-gnu"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 
@@ -10,7 +10,7 @@ declare i32 @"strlen"(i8* %".1", ...)
 
 define i32 @"main"()
 {
-main.entry:
+mainentry:
   %"text" = alloca [1024 x i8]
   %".2" = bitcast [1024 x i8]* %"text" to i8*
   %".3" = alloca i8*

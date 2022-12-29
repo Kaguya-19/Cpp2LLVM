@@ -124,11 +124,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#declarationSpecifiers2.
-    def visitDeclarationSpecifiers2(self, ctx:CParser.DeclarationSpecifiers2Context):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#declarationSpecifier.
     def visitDeclarationSpecifier(self, ctx:CParser.DeclarationSpecifierContext):
         return self.visitChildren(ctx)

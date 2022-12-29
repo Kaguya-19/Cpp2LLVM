@@ -122,22 +122,6 @@ int main () {
         }
 
         char result = orderBetweenOp(topOp(&optr), s[i]);
-        // switch (result)
-        // {
-        // case '<':
-        //     pushOp(&optr, s[i++]);
-        //     break;
-        // case '=':
-        //     popOp(&optr);
-        //     i++;
-        //     break;
-        // case '>':
-        //     int a = popNum(&opnd);
-        //     int b = popNum(&opnd);
-        //     char op = popOp(&optr);
-        //     pushNum(&opnd, calc(b, a, op));
-        //     break;
-        // }
         if (result == '<') {
             pushOp(&optr, s[i++]);
         } else if (result == '=') {

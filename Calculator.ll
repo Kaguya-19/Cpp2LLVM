@@ -14,11 +14,11 @@ declare i32 @"memset"(i8* %".1", i32 %".2", i32 %".3", ...)
 
 declare i32 @"atoi"(i8* %".1", ...)
 
-define i32 @"charToInt"(i8 %".1")
+define i32 @"charToInt"(i8 %"c.1")
 {
 charToIntentry:
   %"c" = alloca i8
-  store i8 %".1", i8* %"c"
+  store i8 %"c.1", i8* %"c"
   %"res" = alloca i32
   br label %"cond"
 cond:
@@ -106,13 +106,13 @@ quit.6:
   br label %"quit.5"
 }
 
-define i8 @"orderBetweenOp"(i8 %".1", i8 %".2")
+define i8 @"orderBetweenOp"(i8 %"op1.1", i8 %"op2.1")
 {
 orderBetweenOpentry:
   %"op1" = alloca i8
-  store i8 %".1", i8* %"op1"
+  store i8 %"op1.1", i8* %"op1"
   %"op2" = alloca i8
-  store i8 %".2", i8* %"op2"
+  store i8 %"op2.1", i8* %"op2"
   %"pri" = alloca [49 x i8]
   %".6" = getelementptr [49 x i8], [49 x i8]* %"pri", i32 0, i32 0
   store i8 62, i8* %".6"
@@ -235,15 +235,15 @@ orderBetweenOpentry:
   ret i8 %".121"
 }
 
-define i32 @"calc"(i32 %".1", i32 %".2", i8 %".3")
+define i32 @"calc"(i32 %"a.1", i32 %"b.1", i8 %"op.1")
 {
 calcentry:
   %"a" = alloca i32
-  store i32 %".1", i32* %"a"
+  store i32 %"a.1", i32* %"a"
   %"b" = alloca i32
-  store i32 %".2", i32* %"b"
+  store i32 %"b.1", i32* %"b"
   %"op" = alloca i8
-  store i8 %".3", i8* %"op"
+  store i8 %"op.1", i8* %"op"
   br label %"cond"
 cond:
   %".9" = load i8, i8* %"op"
@@ -291,11 +291,11 @@ quit.3:
   ret i32 0
 }
 
-define i32 @"popNum"(%"opndStack"* %".1")
+define i32 @"popNum"(%"opndStack"* %"stack.1")
 {
 popNumentry:
   %"stack" = alloca %"opndStack"*
-  store %"opndStack"* %".1", %"opndStack"** %"stack"
+  store %"opndStack"* %"stack.1", %"opndStack"** %"stack"
   br label %"cond"
 cond:
   %".5" = load %"opndStack"*, %"opndStack"** %"stack"
@@ -325,13 +325,13 @@ quit:
   ret i32 0
 }
 
-define void @"pushNum"(%"opndStack"* %".1", i32 %".2")
+define void @"pushNum"(%"opndStack"* %"stack.1", i32 %"num.1")
 {
 pushNumentry:
   %"stack" = alloca %"opndStack"*
-  store %"opndStack"* %".1", %"opndStack"** %"stack"
+  store %"opndStack"* %"stack.1", %"opndStack"** %"stack"
   %"num" = alloca i32
-  store i32 %".2", i32* %"num"
+  store i32 %"num.1", i32* %"num"
   %".6" = load %"opndStack"*, %"opndStack"** %"stack"
   %".7" = getelementptr %"opndStack", %"opndStack"* %".6", i32 0, i32 0
   %".8" = load i32*, i32** %".7"
@@ -349,11 +349,11 @@ pushNumentry:
   ret void
 }
 
-define i8 @"popOp"(%"optrStack"* %".1")
+define i8 @"popOp"(%"optrStack"* %"stack.1")
 {
 popOpentry:
   %"stack" = alloca %"optrStack"*
-  store %"optrStack"* %".1", %"optrStack"** %"stack"
+  store %"optrStack"* %"stack.1", %"optrStack"** %"stack"
   br label %"cond"
 cond:
   %".5" = load %"optrStack"*, %"optrStack"** %"stack"
@@ -380,13 +380,13 @@ quit:
   ret i8 0
 }
 
-define void @"pushOp"(%"optrStack"* %".1", i8 %".2")
+define void @"pushOp"(%"optrStack"* %"stack.1", i8 %"op.1")
 {
 pushOpentry:
   %"stack" = alloca %"optrStack"*
-  store %"optrStack"* %".1", %"optrStack"** %"stack"
+  store %"optrStack"* %"stack.1", %"optrStack"** %"stack"
   %"op" = alloca i8
-  store i8 %".2", i8* %"op"
+  store i8 %"op.1", i8* %"op"
   %".6" = load %"optrStack"*, %"optrStack"** %"stack"
   %".7" = getelementptr %"optrStack", %"optrStack"* %".6", i32 0, i32 1
   %".8" = load i32, i32* %".7"
@@ -408,11 +408,11 @@ pushOpentry:
   ret void
 }
 
-define i8 @"topOp"(%"optrStack"* %".1")
+define i8 @"topOp"(%"optrStack"* %"stack.1")
 {
 topOpentry:
   %"stack" = alloca %"optrStack"*
-  store %"optrStack"* %".1", %"optrStack"** %"stack"
+  store %"optrStack"* %"stack.1", %"optrStack"** %"stack"
   br label %"cond"
 cond:
   %".5" = load %"optrStack"*, %"optrStack"** %"stack"

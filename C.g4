@@ -162,10 +162,6 @@ declarationSpecifiers
     :   declarationSpecifier+
     ;
 
-declarationSpecifiers2
-    :   declarationSpecifier+
-    ;
-
 declarationSpecifier
     :   storageClassSpecifier
     |   typeSpecifier
@@ -273,12 +269,8 @@ directDeclarator
     :   Identifier
     |   '(' declarator ')'
     |   directDeclarator '[' typeQualifierList? assignmentExpression? ']'
-    |   directDeclarator '[' 'static' typeQualifierList? assignmentExpression ']'
-    |   directDeclarator '[' typeQualifierList 'static' assignmentExpression ']'
-    |   directDeclarator '[' typeQualifierList? '*' ']'
     |   directDeclarator '(' parameterTypeList ')'
     |   directDeclarator '(' identifierList? ')'
-    |   Identifier ':' DigitSequence  
     ;
 
 pointer
@@ -303,7 +295,6 @@ parameterList
 
 parameterDeclaration
     :   declarationSpecifiers declarator
-    |   declarationSpecifiers2 abstractDeclarator?
     ;
 
 identifierList
@@ -364,18 +355,11 @@ designator
     ;
 
 statement
-    :   labeledStatement
-    |   compoundStatement
+    :   compoundStatement
     |   expressionStatement
     |   selectionStatement
     |   iterationStatement
     |   jumpStatement
-    ;
-
-labeledStatement
-    :   Identifier ':' statement
-    |   'case' constantExpression ':' statement
-    |   'default' ':' statement
     ;
 
 compoundStatement
@@ -398,16 +382,11 @@ expressionStatement
 
 selectionStatement
     :   ifStatement
-    |   switchStatement
     ;
 
 
 ifStatement
     :   'if' '(' expression ')' statement ('else' statement)?
-    ;
-
-switchStatement
-    :   'switch' '(' expression ')' statement
     ;
 
 iterationStatement

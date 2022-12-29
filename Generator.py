@@ -24,6 +24,8 @@ class SymbolTable:
         self.children = None
         
     def insert(self, name, type=BASE_TYPE, value=None):
+        # if name in self.table.keys():
+        #     raise SemanticError("redefinition of " + name)
         self.table[name] = {"type": type, "value": value}        
 
     def addLevel(self):
@@ -137,6 +139,16 @@ class myCVisitor(CVisitor):
         else:
             postfix_expression, postfix_expression_pointer = self.visit(ctx.children[0])
             if postfix_expression_pointer is True:
+                if ctx.children[1].getText() == '[':# array'
+                    postfix_expression = self.builder.load(postfix_expression)
+                    postfix_expression_array_type = self.builder.load(postfix_expression).type
+                    postfix_expression_pointer_type = ir.PointerType(ir.ArrayType(postfix_expression_array_type, 0))
+                    postfix_expression_pointer = self.builder.bitcast(postfix_expression, postfix_expression_pointer_type)
+                    postfix_expression_index = self.visit(ctx.children[2])
+                    postfix_expression_indices = [ir.Constant(INT_TYPE, 0), postfix_expression_index]
+                    postfix_expression_pointer = self.builder.gep(ptr=postfix_expression_pointer, indices=postfix_expression_indices)
+                    return postfix_expression_pointer, True
+                    
                 if len(ctx.children) == 2:
                     postfix_operator = ctx.children[1]
                     if postfix_operator.getText() == '++':
@@ -146,6 +158,7 @@ class myCVisitor(CVisitor):
                         new_postfix_expression = self.builder.add(postfix_expression, ir.Constant(INT_TYPE, 1))
                         self.builder.store(new_postfix_expression, postfix_expression_pointer)
                         return postfix_expression, postfix_expression_pointer
+
                     elif postfix_operator.getText() == '--':
                         postfix_expression_pointer = postfix_expression
                         postfix_expression = self.builder.load(postfix_expression_pointer)
@@ -544,7 +557,12 @@ class myCVisitor(CVisitor):
 
 
     def visitFunctionDefinition(self, ctx):
-        funcType = self.visit(ctx.declarationSpecifiers())
+        '''
+        functionDefinition
+        :   declarationSpecifiers? declarator declarationList? compoundStatement
+        ;
+        '''
+        funcType = self.visit(ctx.declarationSpecifiers())[-1]
         funcName, params = self.visit(ctx.declarator())
         llvmType = ir.FunctionType(funcType, [param[0] for param in params])
         llvmFunc = ir.Function(self.module, llvmType, name=funcName)
@@ -556,7 +574,8 @@ class myCVisitor(CVisitor):
         
         for i, param in enumerate(params):
             param_type, param_name = param
-            address = self.builder.alloca(param_type, name=param_name)
+            address = self.builder.alloca(llvmFunc.args[i].type, name=param_name)
+            llvmFunc.args[i].name = param_name
             self.builder.store(llvmFunc.args[i], address)
             self.symbol_table.insert(param_name, param_type, address)
         self.visit(ctx.compoundStatement())
@@ -567,19 +586,29 @@ class myCVisitor(CVisitor):
     def visitDeclarator(self, ctx: CParser.DeclaratorContext):  
         return self.visit(ctx.directDeclarator())
 
-    def visitDirectDeclarator(self, ctx: CParser.DirectDeclaratorContext):  
-        name = self.visit(ctx.getChild(0))
+    def visitDirectDeclarator(self, ctx: CParser.DirectDeclaratorContext): 
+        '''
+            directDeclarator
+            :   Identifier
+            |   '(' declarator ')'
+            |   directDeclarator '[' typeQualifierList? assignmentExpression? ']'
+            |   directDeclarator '(' parameterTypeList ')'
+            |   directDeclarator '(' identifierList? ')'
+            ;
+        ''' 
         if ctx.Identifier():
-            self.symbol_table.insert(name, (BASE_TYPE, None))
-            return name
-        elif ctx.children[1].getText() == '[':
-            length = self.visit(ctx.assignmentExpression())
-            btype = (ARRAY_TYPE, length)
-            self.symbol_table.insert(name, type=btype)
+            self.symbol_table.insert(ctx.Identifier().getText(), (BASE_TYPE, None))
+            return ctx.Identifier().getText()
+        elif ctx.children[0].getText() == '(':
+            return self.visit(ctx.declarator())
+        
+        name = self.visit(ctx.directDeclarator())
+        if ctx.children[1].getText() == '[':
+            arrLen = self.visit(ctx.assignmentExpression()) if ctx.assignmentExpression() else None
+            self.symbol_table.insert(name, type=(ARRAY_TYPE, arrLen))
             return name
         elif ctx.children[1].getText() == '(':
-            btype = (FUNCTION_TYPE, None)
-            self.symbol_table.insert(name, btype)
+            self.symbol_table.insert(name, (FUNCTION_TYPE, None))
             params = self.visit(ctx.parameterTypeList()) if ctx.parameterTypeList() else []
             return name, params
 
@@ -650,14 +679,34 @@ class myCVisitor(CVisitor):
     def visitStructOrUnion(self, ctx: CParser.StructOrUnionContext):   
         return ctx.getText()
 
-    def visitDeclarationSpecifiers(self, ctx):  
-        return self.visit(ctx.children[-1])
+    def visitDeclarationSpecifiers(self, ctx):
+        '''
+            declarationSpecifiers
+            :   declarationSpecifier+
+            ;
+        '''
+        specifiers = []
+        for child in ctx.children:
+            specifiers.append(self.visit(child))
+        return specifiers
 
-    def visitDeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):  
+    def visitDeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):
+        '''
+            declarationSpecifier
+            :   storageClassSpecifier
+            |   typeSpecifier
+            |   typeQualifier
+            ;
+        ''' #TODO: change for const and typedef
         return self.visit(ctx.children[0])
 
     def visitDeclaration(self, ctx):  
-        _type = self.visit(ctx.declarationSpecifiers())
+        '''
+            declarator
+            :   pointer? directDeclarator
+            ;
+        '''
+        _type = self.visit(ctx.declarationSpecifiers())[-1]
         if not ctx.initDeclaratorList():
             return ''
 
@@ -744,18 +793,34 @@ class myCVisitor(CVisitor):
             init_list = self.visit(ctx.initializerList()) + init_list
         return init_list
 
-    def visitParameterTypeList(self, ctx: CParser.ParameterTypeListContext):  
-        if ctx.parameterList():
-            return self.visit(ctx.parameterList())
+    def visitParameterTypeList(self, ctx: CParser.ParameterTypeListContext):
+        '''
+        parameterTypeList
+            :   parameterList
+            |   parameterList ',' '...'
+            ;
+        '''
+        return self.visit(ctx.parameterList())
 
-    def visitParameterList(self, ctx: CParser.ParameterListContext):  
+    def visitParameterList(self, ctx: CParser.ParameterListContext): 
+        '''
+            parameterList
+            :   parameterDeclaration
+            |   parameterList ',' parameterDeclaration
+            ;
+        '''
         paramList = self.visit(ctx.parameterList()) if ctx.parameterList() else []
-        new_param = self.visit(ctx.parameterDeclaration())
-        paramList.append(new_param)
+        param = self.visit(ctx.parameterDeclaration())
+        paramList.append(param)
         return paramList
 
-    def visitParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext):  
-        return [self.visit(ctx.declarationSpecifiers()), self.visit(ctx.declarator())]
+    def visitParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext):
+        '''
+            parameterDeclaration
+            :   declarationSpecifiers declarator
+            ;
+        '''
+        return (self.visit(ctx.declarationSpecifiers())[-1], self.visit(ctx.declarator()))
 
     def visitTerminal(self, node):  
         return node.getText()
@@ -909,18 +974,15 @@ class myCVisitor(CVisitor):
 
     def visitForDeclaration(self, ctx: CParser.ForDeclarationContext):
         
-        _type = self.visit(ctx.declarationSpecifiers())
+        _type = self.visit(ctx.declarationSpecifiers())[-1]
         declarator_list = self.visit(ctx.initDeclaratorList())
 
         for name, init_val in declarator_list:
             self.variableDeclaration(name, init_val, _type)
 
     def visitSelectionStatement(self, ctx: CParser.SelectionStatementContext):
-        
         if ctx.ifStatement():
             self.visitIfStatement(ctx.ifStatement())
-        elif ctx.switchStatement():
-            self.visitSwitchStatement(ctx.switchStatement())
 
     def visitIfStatement(self, ctx: CParser.IfStatementContext):
         if len(ctx.statement()) > 1:  # else or elif exist
@@ -994,43 +1056,6 @@ class myCVisitor(CVisitor):
             self.builder.position_at_start(quit_block)
 
             self.symbol_table.exitLevel()
-
-    def visitSwitchStatement(self, ctx: CParser.SwitchStatementContext):
-    
-        block_name = self.builder.block.name
-        head_block = self.builder.append_basic_block(name="head".format(block_name))
-        stat_block = self.builder.append_basic_block(name="head".format(block_name))
-        quit_block = self.builder.append_basic_block(name="quit".format(block_name))
-
-        lst_break_to = self.break_to
-        self.break_to = quit_block
-        lst_switch_val = self.switch_val
-
-        self.builder.branch(head_block)
-        self.builder.position_at_start(head_block)
-        self.switch_val = self.visit(ctx.expression())
-
-        self.builder.branch(stat_block)
-        self.builder.position_at_start(stat_block)
-        self.symbol_table.addLevel()
-        self.visit(ctx.statement())
-        self.symbol_table.exitLevel()
-
-        self.builder.branch(quit_block)
-        self.builder.position_at_start(quit_block)
-
-        self.switch_val = lst_switch_val
-        self.break_to = lst_break_to
-
-    def visitLabeledStatement(self, ctx:CParser.LabeledStatementContext):
-        if ctx.Case():
-            if self.switch_val:
-                if self.switch_val != self.visit(ctx.constantExpression()):
-                    self.visit(ctx.statement())
-            else:
-                raise SemanticError("No switch value!\n", ctx)
-        elif ctx.Default():
-            self.visit(ctx.statement())
 
     def output(self):
         return repr(self.module)
