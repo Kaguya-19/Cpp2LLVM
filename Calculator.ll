@@ -1,4 +1,4 @@
-; ModuleID = ""
+; ModuleID = "main"
 target triple = "x86_64-pc-linux-gnu"
 target datalayout = "e-m:e-i64:64-f80:128-n8:16:32:64-S128"
 
@@ -16,7 +16,7 @@ declare i32 @"atoi"(i8* %".1", ...)
 
 define i32 @"charToInt"(i8 %".1")
 {
-charToInt.entry:
+charToIntentry:
   %"c" = alloca i8
   store i8 %".1", i8* %"c"
   %"res" = alloca i32
@@ -108,7 +108,7 @@ quit.6:
 
 define i8 @"orderBetweenOp"(i8 %".1", i8 %".2")
 {
-orderBetweenOp.entry:
+orderBetweenOpentry:
   %"op1" = alloca i8
   store i8 %".1", i8* %"op1"
   %"op2" = alloca i8
@@ -237,7 +237,7 @@ orderBetweenOp.entry:
 
 define i32 @"calc"(i32 %".1", i32 %".2", i8 %".3")
 {
-calc.entry:
+calcentry:
   %"a" = alloca i32
   store i32 %".1", i32* %"a"
   %"b" = alloca i32
@@ -293,7 +293,7 @@ quit.3:
 
 define i32 @"popNum"(%"opndStack"* %".1")
 {
-popNum.entry:
+popNumentry:
   %"stack" = alloca %"opndStack"*
   store %"opndStack"* %".1", %"opndStack"** %"stack"
   br label %"cond"
@@ -327,7 +327,7 @@ quit:
 
 define void @"pushNum"(%"opndStack"* %".1", i32 %".2")
 {
-pushNum.entry:
+pushNumentry:
   %"stack" = alloca %"opndStack"*
   store %"opndStack"* %".1", %"opndStack"** %"stack"
   %"num" = alloca i32
@@ -351,7 +351,7 @@ pushNum.entry:
 
 define i8 @"popOp"(%"optrStack"* %".1")
 {
-popOp.entry:
+popOpentry:
   %"stack" = alloca %"optrStack"*
   store %"optrStack"* %".1", %"optrStack"** %"stack"
   br label %"cond"
@@ -382,7 +382,7 @@ quit:
 
 define void @"pushOp"(%"optrStack"* %".1", i8 %".2")
 {
-pushOp.entry:
+pushOpentry:
   %"stack" = alloca %"optrStack"*
   store %"optrStack"* %".1", %"optrStack"** %"stack"
   %"op" = alloca i8
@@ -410,7 +410,7 @@ pushOp.entry:
 
 define i8 @"topOp"(%"optrStack"* %".1")
 {
-topOp.entry:
+topOpentry:
   %"stack" = alloca %"optrStack"*
   store %"optrStack"* %".1", %"optrStack"** %"stack"
   br label %"cond"
@@ -438,7 +438,7 @@ quit:
 
 define i32 @"main"()
 {
-main.entry:
+mainentry:
   %"s" = alloca [512 x i8]
   %".2" = bitcast [512 x i8]* %"s" to i8*
   %".3" = alloca i8*
@@ -479,12 +479,12 @@ main.entry:
   %".35" = load i8*, i8** %".34"
   %".36" = load i8*, i8** %".28"
   store i8* %".36", i8** %".34"
-  %"currentNum" = alloca [128 x i8]
-  %".38" = bitcast [128 x i8]* %"currentNum" to i8*
+  %"currentNum" = alloca [15 x i8]
+  %".38" = bitcast [15 x i8]* %"currentNum" to i8*
   %".39" = alloca i8*
   store i8* %".38", i8** %".39"
   %".41" = load i8*, i8** %".39"
-  %".42" = call i32 (i8*, i32, i32, ...) @"memset"(i8* %".41", i32 0, i32 128)
+  %".42" = call i32 (i8*, i32, i32, ...) @"memset"(i8* %".41", i32 0, i32 15)
   %".43" = load %"optrStack", %"optrStack"* %".26"
   call void @"pushOp"(%"optrStack"* %".26", i8 0)
   %"i" = alloca i32
@@ -559,7 +559,7 @@ stat.2:
   %".98" = call i32 (i8*, ...) @"atoi"(i8* %".97")
   call void @"pushNum"(%"opndStack"* %".14", i32 %".98")
   %".100" = load i8*, i8** %".39"
-  %".101" = call i32 (i8*, i32, i32, ...) @"memset"(i8* %".100", i32 0, i32 128)
+  %".101" = call i32 (i8*, i32, i32, ...) @"memset"(i8* %".100", i32 0, i32 15)
   %".102" = load i32, i32* %"k"
   store i32 0, i32* %"k"
   br label %"quit.2"

@@ -14,21 +14,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#genericSelection.
-    def visitGenericSelection(self, ctx:CParser.GenericSelectionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#genericAssocList.
-    def visitGenericAssocList(self, ctx:CParser.GenericAssocListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#genericAssociation.
-    def visitGenericAssociation(self, ctx:CParser.GenericAssociationContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#postfixExpression.
     def visitPostfixExpression(self, ctx:CParser.PostfixExpressionContext):
         return self.visitChildren(ctx)
@@ -224,23 +209,8 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#atomicTypeSpecifier.
-    def visitAtomicTypeSpecifier(self, ctx:CParser.AtomicTypeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#typeQualifier.
     def visitTypeQualifier(self, ctx:CParser.TypeQualifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#functionSpecifier.
-    def visitFunctionSpecifier(self, ctx:CParser.FunctionSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#alignmentSpecifier.
-    def visitAlignmentSpecifier(self, ctx:CParser.AlignmentSpecifierContext):
         return self.visitChildren(ctx)
 
 
@@ -251,31 +221,6 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#directDeclarator.
     def visitDirectDeclarator(self, ctx:CParser.DirectDeclaratorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#gccDeclaratorExtension.
-    def visitGccDeclaratorExtension(self, ctx:CParser.GccDeclaratorExtensionContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#gccAttributeSpecifier.
-    def visitGccAttributeSpecifier(self, ctx:CParser.GccAttributeSpecifierContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#gccAttributeList.
-    def visitGccAttributeList(self, ctx:CParser.GccAttributeListContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#gccAttribute.
-    def visitGccAttribute(self, ctx:CParser.GccAttributeContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#nestedParenthesesBlock.
-    def visitNestedParenthesesBlock(self, ctx:CParser.NestedParenthesesBlockContext):
         return self.visitChildren(ctx)
 
 
@@ -351,11 +296,6 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#designator.
     def visitDesignator(self, ctx:CParser.DesignatorContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#staticAssertDeclaration.
-    def visitStaticAssertDeclaration(self, ctx:CParser.StaticAssertDeclarationContext):
         return self.visitChildren(ctx)
 
 
@@ -444,11 +384,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#gotoStatement.
-    def visitGotoStatement(self, ctx:CParser.GotoStatementContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#continueStatement.
     def visitContinueStatement(self, ctx:CParser.ContinueStatementContext):
         return self.visitChildren(ctx)
@@ -461,11 +396,6 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#returnStatement.
     def visitReturnStatement(self, ctx:CParser.ReturnStatementContext):
-        return self.visitChildren(ctx)
-
-
-    # Visit a parse tree produced by CParser#gotoGCCStatement.
-    def visitGotoGCCStatement(self, ctx:CParser.GotoGCCStatementContext):
         return self.visitChildren(ctx)
 
 
