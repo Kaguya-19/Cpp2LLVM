@@ -201,8 +201,7 @@ expression_statement
 	;
 
 selection_statement
-	: If LeftParen expression RightParen statement
-	| If LeftParen expression RightParen statement Else statement
+	: If LeftParen expression RightParen statement Else statement
 	;
 
 iteration_statement:
