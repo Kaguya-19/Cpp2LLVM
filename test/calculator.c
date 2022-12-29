@@ -4,6 +4,7 @@ int strlen(const char * s);
 int memset(char *str, int c, int n);
 int atoi(const char * str);
 
+// From silde of Data Structure
 
 int charToInt(char c){
 	int res;

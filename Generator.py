@@ -159,87 +159,61 @@ class myCVisitor(CVisitor):
             return primary_expr
         else:
             postfix_expr, postfix_expr_ptr = self.visit(ctx.children[0])
-            if postfix_expr_ptr is True:
-                if len(ctx.children) == 2:
-                    postfix_optr = ctx.children[1]
-                    if postfix_optr.getText() == '++':
-                        postfix_expr_ptr = postfix_expr
-                        postfix_expr = self.builder.load(postfix_expr_ptr)
-                        self.builder.store(postfix_expr, postfix_expr_ptr)
-                        temp_expr = self.builder.add(postfix_expr, ir.Constant(INT_TYPE, 1))
-                        self.builder.store(temp_expr, postfix_expr_ptr)
-                        return postfix_expr, postfix_expr_ptr
-                    elif postfix_optr.getText() == '--':
-                        postfix_expr_ptr = postfix_expr
-                        postfix_expr = self.builder.load(postfix_expr_ptr)
-                        self.builder.store(postfix_expr, postfix_expr_ptr)
-                        temp_expr = self.builder.sub(postfix_expr, ir.Constant(INT_TYPE, 1))
-                        self.builder.store(temp_expr, postfix_expr_ptr)
-                        return postfix_expr, postfix_expr_ptr
+            if postfix_expr_ptr:
+                if ctx.children[1].getText() == '[': #array
+                    baseAddr = self.builder.load(postfix_expr)
+                    arrayType = self.builder.load(baseAddr).type
+                    ptr_type = ir.PointerType(ir.ArrayType(arrayType, 0))
+                    postfix_expr_ptr = self.builder.bitcast(baseAddr, ptr_type)
+                    postfix_expression_index = self.visit(ctx.children[2])
+                    postfix_expression_indexs = [ir.Constant(INT_TYPE, 0), postfix_expression_index]
+                    postfix_expr_ptr = self.builder.gep(postfix_expr_ptr, postfix_expression_indexs)
+                    return postfix_expr_ptr, True
+                elif ctx.children[1].getText() == '(': #function
+                    if ctx.argumentExpressionList():
+                        arg_list = self.visit(ctx.argumentExpressionList())
                     else:
-                        raise Exception()
-                elif len(ctx.children) == 3:
-                    postfix_optr = ctx.children[1]
-                    if postfix_optr.getText() == '(':
-                        arg_exprs = []
-                        return self.builder.call(postfix_expr, arg_exprs), False
-                    elif postfix_optr.getText() == '.':
-                        postfix_expr_ptr, iden_indices \
-                            = self.handlePostfixExpressionInstance(ctx, postfix_optr)
-                        postfix_expr_ptr = self.builder.gep(ptr=postfix_expr_ptr
-                                                                      , indices=iden_indices)
-                        return postfix_expr_ptr, True
-                    elif postfix_optr.getText() == '->':
-                        postfix_expr_ptr, iden_indices \
-                            = self.handlePostfixExpressionInstance(ctx, postfix_optr)
-                        postfix_expr_ptr = self.builder.gep(ptr=self.builder.load(postfix_expr_ptr)
-                                                                      , indices=iden_indices)
-                        return postfix_expr_ptr, True
-                    else:
-                        raise Exception()
-                elif len(ctx.children) == 4:
-                    postfix_optr = ctx.children[1]
-                    if postfix_optr.getText() == '[':
-                        postfix_expr = self.builder.load(postfix_expr)
-                        array_type = self.builder.load(postfix_expr).type
-                        ptr_type = ir.PointerType(ir.ArrayType(array_type, 0))
-                        postfix_expr_ptr = self.builder.bitcast(postfix_expr, ptr_type)
-                        postfix_expression_index = self.visit(ctx.children[2])
-                        postfix_expression_indices = [ir.Constant(INT_TYPE, 0), postfix_expression_index]
-                        postfix_expr_ptr = self.builder.gep(ptr=postfix_expr_ptr, indices=postfix_expression_indices)
-                        return postfix_expr_ptr, True
-                    elif postfix_optr.getText() == '(':
-                        arg_exprs = self.visit(ctx.children[2])
-                        return self.builder.call(postfix_expr, arg_exprs), False
-                    else:
-                        raise Exception()
-                else:
-                    raise Exception()
-            else:
-                raise Exception()
+                        arg_list = []
+                    return self.builder.call(postfix_expr, arg_list), False
+                elif ctx.children[1].getText() == '.': #struct
+                    postfix_expr = ctx.children[0]
+                    identifier = ctx.children[2]
+                    postfix_expr_ptr = self.symbol_table.getValue(postfix_expr.getText())
+                    iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.name
+                                                                              , identifier.getText())
+                
+                    iden_indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, iden_index)]
+                    postfix_expr_ptr = self.builder.gep(postfix_expr_ptr
+                                                                      , iden_indexs)
+                    return postfix_expr_ptr, True
+                elif ctx.children[1].getText() == '->': #struct pointer
+                    postfix_expr = ctx.children[0]
+                    identifier = ctx.children[2]
+                    postfix_expr_ptr = self.symbol_table.getValue(postfix_expr.getText())
+                    iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.pointee.name
+                                                                              , identifier.getText())
+                
+                    iden_indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, iden_index)]
+                    postfix_expr_ptr = self.builder.gep(self.builder.load(postfix_expr_ptr)
+                                                                      , iden_indexs)
+                    return postfix_expr_ptr, True
+                elif ctx.children[1].getText() == '++': #++
+                    postfix_expr_ptr = postfix_expr
+                    postfix_expr = self.builder.load(postfix_expr_ptr)
+                    self.builder.store(postfix_expr, postfix_expr_ptr)
+                    temp_expr = self.builder.add(postfix_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(temp_expr, postfix_expr_ptr)
+                    return postfix_expr, postfix_expr_ptr
+                elif ctx.children[1].getText() == '--':
+                    postfix_expr_ptr = postfix_expr
+                    postfix_expr = self.builder.load(postfix_expr_ptr)
+                    self.builder.store(postfix_expr, postfix_expr_ptr)
+                    temp_expr = self.builder.sub(postfix_expr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(temp_expr, postfix_expr_ptr)
+                    return postfix_expr, postfix_expr_ptr
 
         raise Exception()
         
-    def handlePostfixExpressionInstance(self, ctx, postfix_expr_ptr):
-        '''
-            postfixExpression
-            :   primaryExpression
-            |   postfixExpression '.' Identifier
-            |   postfixExpression '->' Identifier
-        '''
-        postfix_expr = ctx.children[0]
-        identifier = ctx.children[2]
-        postfix_expr_ptr = self.symbol_table.getValue(postfix_expr.getText())
-        if ctx.children[1].getText() == '.':
-            iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.name
-                                                                  , identifier.getText())
-        elif ctx.children[1].getText() == '->':
-            iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.pointee.name
-                                                                  , identifier.getText())
-        else:
-            raise Exception()
-        iden_indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, iden_index)]
-        return postfix_expr_ptr, iden_indexs   
 
     def visitArgumentExpressionList(self, ctx: CParser.ArgumentExpressionListContext):
         '''
@@ -720,18 +694,16 @@ class myCVisitor(CVisitor):
             :   Identifier
             |   '(' declarator ')'
             |   directDeclarator '[' typeQualifierList? assignmentExpression? ']'
-            |   directDeclarator '[' 'static' typeQualifierList? assignmentExpression ']'
-            |   directDeclarator '[' typeQualifierList 'static' assignmentExpression ']'
-            |   directDeclarator '[' typeQualifierList? '*' ']'
             |   directDeclarator '(' parameterTypeList ')'
             |   directDeclarator '(' identifierList? ')'
-            |   Identifier ':' DigitSequence  
             ;
         '''
         iden_name = self.visit(ctx.getChild(0))
         if ctx.Identifier():
             self.symbol_table.insert(iden_name, (BASE_TYPE, None))
             return iden_name
+        elif ctx.declarator():
+            return self.visit(ctx.declarator())
         elif ctx.children[1].getText() == '[':
             length = self.visit(ctx.assignmentExpression())
             btype = (ARRAY_TYPE, length)
@@ -879,7 +851,7 @@ class myCVisitor(CVisitor):
             :   declarationSpecifier+
             ;
         '''
-        return self.visit(ctx.children[-1])
+        return self.visit(ctx.children[-1]) # we don't care about the storage class
 
     def visitDeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):  
         '''
@@ -942,7 +914,7 @@ class myCVisitor(CVisitor):
 
                 for i in range(l):
                     indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, i)]
-                    ptr = self.builder.gep(ptr=value, indices=indexs)
+                    ptr = self.builder.gep(value, indexs)
                     self.builder.store(init_val[i], ptr)
             value = self.builder.bitcast(value, ir.PointerType(_type))
             temp_ptr = self.builder.alloca(value.type)
@@ -1055,12 +1027,9 @@ class myCVisitor(CVisitor):
             |   declarationSpecifiers2 abstractDeclarator?
             ;
         ''' 
-        return [self.visit(ctx.declarationSpecifiers()), self.visit(ctx.declarator())]
+        return (self.visit(ctx.declarationSpecifiers()), self.visit(ctx.declarator()))
 
     def visitTerminal(self, node):  
-        '''
-            TODO
-        '''
         return node.getText()
 
     def visitJumpStatement(self, ctx:CParser.JumpStatementContext):
@@ -1266,18 +1235,16 @@ class myCVisitor(CVisitor):
             | 	declarationSpecifiers
             ;
         '''
-        _type = self.visit(ctx.declarationSpecifiers())
+        type = self.visit(ctx.declarationSpecifiers())
         dec_list = self.visit(ctx.initDeclaratorList())
 
         for name, init_val in dec_list:
-            self.variableDeclaration(name, init_val, _type)
+            self.variableDeclaration(name, init_val, type)
 
     def visitSelectionStatement(self, ctx: CParser.SelectionStatementContext):
         '''
             selectionStatement
             :   ifStatement
-            |   switchStatement
-            ;
         '''
         if ctx.ifStatement():
             self.visitIfStatement(ctx.ifStatement())
@@ -1359,54 +1326,6 @@ class myCVisitor(CVisitor):
             self.builder.position_at_start(quit_block)
 
             self.symbol_table.exitLevel()
-
-    def visitSwitchStatement(self, ctx: CParser.SwitchStatementContext):
-        '''
-            switchStatement
-            :   'switch' '(' expression ')' statement
-            ;
-        '''
-        block_name = self.builder.block.name
-        head_block = self.builder.append_basic_block(name="head".format(block_name))
-        stat_block = self.builder.append_basic_block(name="head".format(block_name))
-        quit_block = self.builder.append_basic_block(name="quit".format(block_name))
-
-        last_break_to = self.break_to
-        self.break_to = quit_block
-        last_switch_val = self.switch_val
-
-        self.builder.branch(head_block)
-        self.builder.position_at_start(head_block)
-        self.switch_val = self.visit(ctx.expression())
-
-        self.builder.branch(stat_block)
-        self.builder.position_at_start(stat_block)
-        self.symbol_table.addLevel()
-        self.visit(ctx.statement())
-        self.symbol_table.exitLevel()
-
-        self.builder.branch(quit_block)
-        self.builder.position_at_start(quit_block)
-
-        self.switch_val = last_switch_val
-        self.break_to = last_break_to
-
-    def visitLabeledStatement(self, ctx:CParser.LabeledStatementContext):
-        '''
-            labeledStatement
-            :   Identifier ':' statement
-            |   'case' constantExpression ':' statement
-            |   'default' ':' statement
-            ;
-        '''
-        if ctx.Case():
-            if self.switch_val:
-                if self.switch_val != self.visit(ctx.constantExpression()):
-                    self.visit(ctx.statement())
-            else:
-                raise SemanticError("No switch value!\n", ctx)
-        elif ctx.Default():
-            self.visit(ctx.statement())
 
     def output(self):
         return repr(self.module)
