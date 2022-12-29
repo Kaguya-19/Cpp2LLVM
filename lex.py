@@ -28,7 +28,7 @@ class Lexer():
     for value in key_dict.values():
         cpp_tokens.append(value)
     
-    optr_dict = { '(': 'LeftParen', ')': 'RightParen', '[': 'LeftBracket', ']': 'RightBracket', '{': 'LeftBrace', '}': 'RightBrace', '+': 'Plus', '-': 'Minus', '*': 'Star', '/': 'Div','!': 'Not', '=': 'Assign', '<': 'Less', '>': 'Greater', ';': 'Semi', ',': 'Comma', '.': 'Dot', '&&': 'AndAnd', '||': 'OrOr', '==': 'Equal', '!=': 'NotEqual', '<=': 'LessEqual', '>=': 'GreaterEqual'}
+    optr_dict = { '(': 'LeftParen', ')': 'RightParen', '[': 'LeftBracket', ']': 'RightBracket', '{': 'LeftBrace', '}': 'RightBrace', '+': 'Plus', '-': 'Minus', '*': 'Star', '/': 'Div','!': 'Not', '=': 'Assign', '<': 'Less', '>': 'Greater', ';': 'Semi', ',': 'Comma', '.': 'Dot', '&&': 'AndAnd', '||': 'OrOr', '==': 'Equal', '!=': 'NotEqual', '<=': 'LessEqual', '>=': 'GreaterEqual','...':'Ellipsis'}
     for value in optr_dict.values():
         cpp_tokens.append(value)
         
