@@ -1,6 +1,8 @@
 import sys
 from antlr4 import *
 from CPP14Lexer import CPP14Lexer
+from CLexer import CLexer
+from CParser import CParser
 # from CPP14Parser import CPP14Parser
 # from CPP14ParserVisitor import CPP14ParserVisitor
 from myParser import myParser
@@ -17,11 +19,11 @@ def toDict(tree):
     
 
 def main(argv=sys.argv):
-    lexer = CPP14Lexer(StdinStream())
+    lexer = CLexer(StdinStream())
     stream = CommonTokenStream(lexer)    
     # parser = CPP14Parser(stream)
-    parser = myParser(stream)
-    tree = parser.translation_unit()
+    parser = CParser(stream)
+    tree = parser.translationUnit()
     dictTree = toDict(tree)
     import json
     file_name = 'tree.json'
