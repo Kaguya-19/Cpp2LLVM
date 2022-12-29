@@ -1,8 +1,8 @@
 import sys
 from antlr4 import *
-from .CLexer import CLexer
-from .CParser import CParser
-from .CVisitor import CVisitor
+from CLexer import CLexer
+from CParser import CParser
+from CVisitor import CVisitor
 from llvmlite import ir
 
 CHAR_TYPE = ir.IntType(8)
@@ -18,38 +18,40 @@ FUNCTION_TYPE = 2
 STRUCT_TYPE = 3
 
 class SymbolTable:
-    def __init__(self, father=None):
+    def __init__(self, parent=None):
+        self.parent = parent
         self.symbol_list = {}
         self.value_list = {}
         self.children = None
-        self.father = father
+        
+    def insert(self, name, btype=BASE_TYPE, value=None):
+        self.symbol_list[name] = btype
+        self.value_list[name] = value
+        
 
-    def enter_scope(self):
+    def addLevel(self):
         self.children = SymbolTable(self)
         return self.children
 
-    def leave_scope(self):
-        return self.father
+    def exitLevel(self):
+        return self.parent
 
     def get_type(self, name):
         if name in self.symbol_list:
             return self.symbol_list[name]
-        if self.father:
-            return self.father.get_type(name)
+        if self.parent:
+            return self.parent.get_type(name)
         else:
             return None
 
     def get_value(self, name):
         if name in self.value_list:
             return self.value_list[name]
-        if self.father:
-            return self.father.get_value(name)
+        if self.parent:
+            return self.parent.get_value(name)
         else:
             return None
 
-    def insert(self, name, btype=BASE_TYPE, value=None):
-        self.symbol_list[name] = btype
-        self.value_list[name] = value
         
 class StructTable:
     def __init__(self):
@@ -115,7 +117,7 @@ class UnSupportedError(Exception):
             
 
 
-class ToLLVMVisitor(CVisitor):
+class myCVisitor(CVisitor):
     def __init__(self):
         super().__init__()
         self.module = ir.Module()
@@ -129,15 +131,13 @@ class ToLLVMVisitor(CVisitor):
         self.switch_val = None
         self.struct_table = StructTable()
 
-    # help function
-    def pos(self, ctx):
-        return f'{ctx.start.line}: {ctx.start.column}'
 
-    def visitCompilationUnit(self, ctx):  # DONE
+
+    def visitCompilationUnit(self, ctx):  
         for i in ctx.children:
             self.visit(i)
 
-    def visitFunctionDefinition(self, ctx):  # DONE
+    def visitFunctionDefinition(self, ctx):  
         func_type = self.visit(ctx.declarationSpecifiers())
         func_name, func_params = self.visit(ctx.declarator())
 
@@ -149,7 +149,7 @@ class ToLLVMVisitor(CVisitor):
         self.builder = ir.IRBuilder(block)
         self.symbol_table.insert(func_name, value=llvm_func)
 
-        self.symbol_table = self.symbol_table.enter_scope()
+        self.symbol_table = self.symbol_table.addLevel()
 
         arg_names = [name for _, name in func_params]
         for arg, name in zip(llvm_func.args, arg_names):
@@ -161,12 +161,12 @@ class ToLLVMVisitor(CVisitor):
         if func_type == VOID_TYPE:
             self.builder.ret_void()
 
-        self.symbol_table = self.symbol_table.leave_scope()
+        self.symbol_table = self.symbol_table.exitLevel()
 
-    def visitDeclarator(self, ctx: CParser.DeclaratorContext):  # DONE
+    def visitDeclarator(self, ctx: CParser.DeclaratorContext):  
         return self.visit(ctx.directDeclarator())
 
-    def visitDirectDeclarator(self, ctx: CParser.DirectDeclaratorContext):  # DONE
+    def visitDirectDeclarator(self, ctx: CParser.DirectDeclaratorContext):  
         name = self.visit(ctx.getChild(0))
         if ctx.Identifier():
             self.symbol_table.insert(name, (BASE_TYPE, None))
@@ -182,7 +182,7 @@ class ToLLVMVisitor(CVisitor):
             params = self.visit(ctx.parameterTypeList()) if ctx.parameterTypeList() else []
             return name, params
 
-    def visitTypeSpecifier(self, ctx: CParser.TypeSpecifierContext):  # DONE
+    def visitTypeSpecifier(self, ctx: CParser.TypeSpecifierContext):  
         if ctx.Void():
             return VOID_TYPE
         elif ctx.Char():
@@ -203,7 +203,7 @@ class ToLLVMVisitor(CVisitor):
         else:
             raise UnSupportedError("unsupported type", ctx)
 
-    def visitStructOrUnionSpecifier(self, ctx: CParser.StructOrUnionSpecifierContext):   # DONE
+    def visitStructOrUnionSpecifier(self, ctx: CParser.StructOrUnionSpecifierContext):   
         if ctx.structDeclarationList():
             if not ctx.Identifier():
                 raise UnSupportedError("don't support anonymous struct", ctx)
@@ -225,36 +225,31 @@ class ToLLVMVisitor(CVisitor):
             new_struct = ir.global_context.get_identified_type(name=struct_name)
             return new_struct
 
-    def visitTypedefName(self, ctx: CParser.TypedefNameContext):  # DONE
+    def visitTypedefName(self, ctx: CParser.TypedefNameContext):  
         return ctx.getText()
 
-    def visitStructDeclarationList(self, ctx: CParser.StructDeclarationListContext):  # DONE
+    def visitStructDeclarationList(self, ctx: CParser.StructDeclarationListContext):  
         dec_list = self.visit(ctx.structDeclarationList()) if ctx.structDeclarationList() else []
         dec_list.append(self.visit(ctx.structDeclaration()))
         return dec_list
 
-    def visitStructDeclaration(self, ctx: CParser.StructDeclarationContext):  # DONE
+    def visitStructDeclaration(self, ctx: CParser.StructDeclarationContext):  
         if ctx.structDeclaratorList():
             raise UnSupportedError("unsupported structDeclaratorList yet", ctx)
-            # struct_type = self.visit(ctx.specifierQualifierList())
-            # struct_name = self.visit(ctx.structDeclaratorList())
-            # str___ = ctx.structDeclaratorList().getText()
-            # len_ = int(re.findall(r'\d+', str___)[0])
-            # return {"type": ir.ArrayType(type_, len_), "name": name_}
         else:
             return self.visit(ctx.specifierQualifierList())
 
-    def visitStructDeclaratorList(self, ctx: CParser.StructDeclaratorListContext):  # DONE
+    def visitStructDeclaratorList(self, ctx: CParser.StructDeclaratorListContext):  
         if ctx.structDeclaratorList():
             raise UnSupportedError("unsupported multiple struct declarator", ctx)
         return self.visit(ctx.structDeclarator())
 
-    def visitStructDeclarator(self, ctx: CParser.StructDeclaratorContext):   # DONE
+    def visitStructDeclarator(self, ctx: CParser.StructDeclaratorContext):   
         if ctx.constantExpression():
             raise UnSupportedError("unsupported constant expression", ctx)
         return self.visit(ctx.declarator())
 
-    def visitSpecifierQualifierList(self, ctx: CParser.SpecifierQualifierListContext):  # DONE
+    def visitSpecifierQualifierList(self, ctx: CParser.SpecifierQualifierListContext):  
         if ctx.typeQualifier():
             raise UnSupportedError("typeQualifier not supported yet!", ctx)
         if not ctx.specifierQualifierList():
@@ -263,16 +258,16 @@ class ToLLVMVisitor(CVisitor):
             return {'type': self.visit(ctx.children[0]),
                     'name': self.visit(ctx.children[1])}
 
-    def visitStructOrUnion(self, ctx: CParser.StructOrUnionContext):   # DONE
+    def visitStructOrUnion(self, ctx: CParser.StructOrUnionContext):   
         return ctx.getText()
 
-    def visitDeclarationSpecifiers(self, ctx):  # DONE
+    def visitDeclarationSpecifiers(self, ctx):  
         return self.visit(ctx.children[-1])
 
-    def visitDeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):  # DONE
+    def visitDeclarationSpecifier(self, ctx: CParser.DeclarationSpecifierContext):  
         return self.visit(ctx.children[0])
 
-    def visitDeclaration(self, ctx):  # DONE
+    def visitDeclaration(self, ctx):  
         _type = self.visit(ctx.declarationSpecifiers())
         if not ctx.initDeclaratorList():
             return ''
@@ -789,46 +784,46 @@ class ToLLVMVisitor(CVisitor):
         for i in ctx.children:
             self.visit(i)
 
-    def visitBlockItem(self, ctx):  # DONE
+    def visitBlockItem(self, ctx):  
         return self.visit(ctx.getChild(0))
 
-    def visitInitDeclaratorList(self, ctx):  # DONE
+    def visitInitDeclaratorList(self, ctx):  
         dec_list = self.visit(ctx.initDeclaratorList()) if ctx.initDeclaratorList() else []
         dec_list.append(self.visit(ctx.initDeclarator()))
         return dec_list
 
-    def visitInitDeclarator(self, ctx):   # DONE
+    def visitInitDeclarator(self, ctx):   
         if ctx.initializer():
             return self.visit(ctx.declarator()), self.visit(ctx.initializer())
         else:
             return self.visit(ctx.declarator()), None
 
-    def visitInitializer(self, ctx):   # DONE
+    def visitInitializer(self, ctx):   
         if ctx.assignmentExpression():
             return self.visit(ctx.assignmentExpression())
         elif ctx.initializerList():
             return self.visit(ctx.initializerList())
 
-    def visitInitializerList(self, ctx: CParser.InitializerListContext):  # DONE
+    def visitInitializerList(self, ctx: CParser.InitializerListContext):  
         init_list = [self.visit(ctx.initializer())]
         if ctx.initializerList():
             init_list = self.visit(ctx.initializerList()) + init_list
         return init_list
 
-    def visitParameterTypeList(self, ctx: CParser.ParameterTypeListContext):  # DONE
+    def visitParameterTypeList(self, ctx: CParser.ParameterTypeListContext):  
         if ctx.parameterList():
             return self.visit(ctx.parameterList())
 
-    def visitParameterList(self, ctx: CParser.ParameterListContext):  # DONE
+    def visitParameterList(self, ctx: CParser.ParameterListContext):  
         param_list = self.visit(ctx.parameterList()) if ctx.parameterList() else []
         new_param = self.visit(ctx.parameterDeclaration())
         param_list.append(new_param)
         return param_list
 
-    def visitParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext):  # DONE
+    def visitParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext):  
         return [self.visit(ctx.declarationSpecifiers()), self.visit(ctx.declarator())]
 
-    def visitTerminal(self, node):  # DONE
+    def visitTerminal(self, node):  
         return node.getText()
 
     def visitJumpStatement(self, ctx:CParser.JumpStatementContext):
@@ -842,9 +837,6 @@ class ToLLVMVisitor(CVisitor):
             self.visitGotoStatement(ctx.gotoStatement())
         elif ctx.gotoGCCStatement():
             self.visitGotoGCCStatement(ctx.gotoGCCStatement())
-
-    def visitGotoStatement(self, ctx: CParser.GotoStatementContext):
-        raise UnSupportedError("Goto Unsupported!\n", ctx)
 
     def visitContinueStatement(self, ctx: CParser.ContinueStatementContext):
         if self.continue_to is not None:
@@ -876,7 +868,7 @@ class ToLLVMVisitor(CVisitor):
             self.visitDoWhileStatement(ctx.doWhileStatement())
 
     def visitWhileStatement(self, ctx:CParser.WhileStatementContext):
-        self.symbol_table = self.symbol_table.enter_scope()
+        self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
         cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
@@ -908,10 +900,10 @@ class ToLLVMVisitor(CVisitor):
 
         self.continue_to = lst_continue_to
         self.break_to = lst_break_to
-        self.symbol_table = self.symbol_table.leave_scope()
+        self.symbol_table = self.symbol_table.exitLevel()
 
     def visitDoWhileStatement(self, ctx:CParser.DoWhileStatementContext):
-        self.symbol_table = self.symbol_table.enter_scope()
+        self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
         stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
@@ -941,10 +933,10 @@ class ToLLVMVisitor(CVisitor):
 
         self.continue_to = lst_continue_to
         self.break_to = lst_break_to
-        self.symbol_table = self.symbol_table.leave_scope()
+        self.symbol_table = self.symbol_table.exitLevel()
 
     def visitForStatement(self, ctx:CParser.ForStatementContext):
-        self.symbol_table = self.symbol_table.enter_scope()
+        self.symbol_table = self.symbol_table.addLevel()
 
         block_name = self.builder.block.name
         cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
@@ -978,10 +970,10 @@ class ToLLVMVisitor(CVisitor):
         self.continue_to = lst_continue_to
         self.break_to = lst_break_to
 
-        self.symbol_table = self.symbol_table.leave_scope()
+        self.symbol_table = self.symbol_table.exitLevel()
 
     def visitForCondition(self, ctx: CParser.ForConditionContext):
-        # TODO: xuyihao
+        
         if ctx.forDeclaration():
             self.visit(ctx.forDeclaration())
         elif ctx.expression():
@@ -989,7 +981,7 @@ class ToLLVMVisitor(CVisitor):
         return ctx.forExpression(0), ctx.forExpression(1)
 
     def visitForDeclaration(self, ctx: CParser.ForDeclarationContext):
-        # TODO: xuyihao
+        
         _type = self.visit(ctx.declarationSpecifiers())
         declarator_list = self.visit(ctx.initDeclaratorList())
 
@@ -997,7 +989,7 @@ class ToLLVMVisitor(CVisitor):
             self.variableDeclaration(name, init_val, _type)
 
     def visitSelectionStatement(self, ctx: CParser.SelectionStatementContext):
-        # TODO: xuyihao
+        
         if ctx.ifStatement():
             self.visitIfStatement(ctx.ifStatement())
         elif ctx.switchStatement():
@@ -1005,7 +997,7 @@ class ToLLVMVisitor(CVisitor):
 
     def visitIfStatement(self, ctx: CParser.IfStatementContext):
         if len(ctx.statement()) > 1:  # else or elif exist
-            self.symbol_table.enter_scope()
+            self.symbol_table.addLevel()
 
             block_name = self.builder.block.name
             cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
@@ -1021,9 +1013,9 @@ class ToLLVMVisitor(CVisitor):
 
             # if block
             self.builder.position_at_start(stat_block)
-            self.symbol_table.enter_scope()
+            self.symbol_table.addLevel()
             self.visit(ctx.statement()[0])
-            self.symbol_table.leave_scope()
+            self.symbol_table.exitLevel()
 
             # if quit block
             try:
@@ -1034,9 +1026,9 @@ class ToLLVMVisitor(CVisitor):
 
             # else block
             self.builder.position_at_start(else_block)
-            self.symbol_table.enter_scope()
+            self.symbol_table.addLevel()
             self.visit(ctx.statement()[1])
-            self.symbol_table.leave_scope()
+            self.symbol_table.exitLevel()
 
             # else quit
             try:
@@ -1045,10 +1037,10 @@ class ToLLVMVisitor(CVisitor):
                 pass
             self.builder.position_at_start(quit_block)
 
-            self.symbol_table.leave_scope()
+            self.symbol_table.exitLevel()
 
         else:  # no else
-            self.symbol_table.enter_scope()
+            self.symbol_table.addLevel()
 
             block_name = self.builder.block.name
             cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
@@ -1063,9 +1055,9 @@ class ToLLVMVisitor(CVisitor):
 
             # statement block
             self.builder.position_at_start(stat_block)
-            self.symbol_table.enter_scope()
+            self.symbol_table.addLevel()
             self.visit(ctx.statement()[0])
-            self.symbol_table.leave_scope()
+            self.symbol_table.exitLevel()
 
             # quit block
             try:
@@ -1074,10 +1066,9 @@ class ToLLVMVisitor(CVisitor):
                 pass
             self.builder.position_at_start(quit_block)
 
-            self.symbol_table.leave_scope()
+            self.symbol_table.exitLevel()
 
     def visitSwitchStatement(self, ctx: CParser.SwitchStatementContext):
-        # self.symbol_table.enter_scope()
 
         block_name = self.builder.block.name
         head_block = self.builder.append_basic_block(name="head".format(block_name))
@@ -1088,25 +1079,21 @@ class ToLLVMVisitor(CVisitor):
         self.break_to = quit_block
         lst_switch_val = self.switch_val
 
-        # head expression block
         self.builder.branch(head_block)
         self.builder.position_at_start(head_block)
         self.switch_val = self.visit(ctx.expression())
 
-        # statement block
         self.builder.branch(stat_block)
         self.builder.position_at_start(stat_block)
-        self.symbol_table.enter_scope()
+        self.symbol_table.addLevel()
         self.visit(ctx.statement())
-        self.symbol_table.leave_scope()
+        self.symbol_table.exitLevel()
 
-        # quit block
         self.builder.branch(quit_block)
         self.builder.position_at_start(quit_block)
 
         self.switch_val = lst_switch_val
         self.break_to = lst_break_to
-        # self.symbol_table.leave_scope()
 
     def visitLabeledStatement(self, ctx:CParser.LabeledStatementContext):
         if ctx.Case():
@@ -1135,7 +1122,7 @@ def main(argv):
     parser = CParser(stream)
     tree = parser.compilationUnit()
 
-    visitor = ToLLVMVisitor()
+    visitor = myCVisitor()
     visitor.visit(tree)
 
     with open(argv[2], 'w', encoding='utf-8') as f:

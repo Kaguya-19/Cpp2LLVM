@@ -1,23 +1,9 @@
-#include<stdio.h>
+int gets(char *s);
+int printf(const char *format,...);
+int strlen(const char * s);
+int memset(char *str, int c, int n);
+int atoi(const char * str);
 
-char orderBetween(char a, char b) {
-	int pri[49];
-	int a_int;
-	int b_int;
-	int k;
-	pri[0] = 0; pri[1] = 0; pri[2] = 1; pri[3] = 1; pri[4] = 1; pri[5] = 0; pri[6] = 0;
-	pri[7] = 0; pri[8] = 0; pri[9] = 1; pri[10] = 1; pri[11] = 1; pri[12] = 0; pri[13] = 0;
-	pri[14] = 0; pri[15] = 0; pri[16] = 0; pri[17] = 0; pri[18] = 1; pri[19] = 0; pri[20] = 0;
-	pri[14] = 0; pri[15] = 0; pri[16] = 0; pri[17] = 0; pri[18] = 1; pri[19] = 0; pri[20] = 0;
-	pri[21] = 1; pri[22] = 1; pri[23] = 1; pri[24] = 1; pri[25] = 1; pri[26] = 2; pri[27] = 3;
-	pri[28] = 3; pri[29] = 3; pri[30] = 3; pri[31] = 3; pri[32] = 3; pri[33] = 3; pri[34] = 3;
-	pri[35] = 1; pri[36] = 1; pri[37] = 1; pri[38] = 1; pri[39] = 1; pri[40] = 3; pri[41] = 2;
-	a_int = charToInt(a);
-	b_int = charToInt(b);
-	k = a_int * 7 + b_int;
-	k = pri[k];
-	return k;
-}
 
 int charToInt(char c){
 	int res;
@@ -31,86 +17,123 @@ int charToInt(char c){
 	return res;
 }
 
-double calcu(double a, char theta, double b) {
-	int res;
-	if (theta == '+') {res = a + b;}
-	else if (theta == '-') {res = a - b;}
-	else if (theta == '*') {res = a * b;}
-	else if (theta == '/') {res = a / b;}
-	return res;
+char orderBetweenOp(char op1, char op2) {
+    char pri[49] = {
+        /*              |-------------------- ------------| */
+   /*              +    -     *     /             (     )    \0 */
+	/* --  + */    '>',   '>',   '<',   '<',   '<',   '>',   '>',
+	/* |   - */    '>',   '>',   '<',   '<',   '<',   '>',   '>',
+	/*   * */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
+	/*  / */    '>',   '>',   '>',   '>',   '<',   '>',   '>',
+	/*   ( */    '<',   '<',   '<',   '<',   '<',   '=',   ' ',
+	/* |   ) */    ' ',   ' ',   ' ',   ' ',   ' ',   ' ',   ' ',
+	/* -- \0 */    '<',   '<',   '<',   '<',   '<',   ' ',   '='
+    };
+
+    int x = charToInt(op1);
+    int y = charToInt(op2);
+
+    return pri[x*7+y];
 }
 
-int main()
-{
-    char s[2000];
-	double opnd[2000];
-    char optr[2000];
-    int i = 0;
-    int opndTop = -1, optrTop = -1;
-	int isBeforeDigit = 0;
-    double currentNum = 0;
-	char order;
-	int ord1,ord2;
-	char op;
-	double pOpnd1, pOpnd2;
-	int res;
+int calc(int a, int b, char op) {
+     if (op == '+')
+         return a + b;
+     if (op == '-')
+         return a - b;
+     if (op == '*')
+         return a * b;
+     if (op == '/')
+         return a / b;
+     return 0;
+}
+
+
+struct opndStack {
+    int *data;
+    int top;
+};
+struct optrStack {
+    char *data;
+    int top;
+};
+
+int popNum(struct opndStack * stack) {
+    if (stack->top >= 0) {
+        stack->top -= 1;
+        return stack->data[stack->top + 1];
+    }
+    return 0;
+}
+
+void pushNum(struct opndStack * stack, int num) {
+    stack->data[++stack->top] = num;
+}
+
+char popOp(struct optrStack * stack) {
+    if (stack->top >= 1)
+        return stack->data[stack->top--];
+    return '\0';
+}
+
+void pushOp(struct optrStack * stack, char op) {
+    stack->top++;
+    stack->data[stack->top] = op;
+}
+
+char topOp(struct optrStack * stack) {
+    if (stack->top < 0)
+        return '0';
+    return stack->data[stack->top];
+}
+
+
+int main () {
+    char s[512];
     printf("please input the expression: ");
     gets(s);
+    int expr_len = strlen(s);
 
+    struct opndStack opnd;
+    int opndData[512];
+    opnd.top = -1;
+    opnd.data = opndData;
 
-//    /*              +       -     *       /       (     )    \0 */
-// 	/* --  + */    0,   0,   1,   1,   1,   0,   0,
-// 	/* |   - */    0,   0,   1,   1,   1,   0,   0,
-// 	/*   * */    0,   0,   0,   0,   1,   0,   0,
-// 	/*  / */    0,   0,   0,   0,   1,   0,   0,
-// 	/*   ( */    1,   1,   1,   1,   1,   2,   3,
-// 	/* |   ) */    3,   3,   3,   3,   3,   3,   3,
-// 	/* -- \0 */    1,   1,   1,   1,   1,   3,   2
+    struct optrStack optr;
+    char optrData[512];
+    optr.top = -1;
+    optr.data = optrData;
 
+    char currentNum[15];
+    memset(currentNum, 0, 15);
 
+    pushOp(&optr, '\0');
 
-	
-	optrTop = optrTop + 1;optr[optrTop] = '\0';
-    
-    for(;optrTop>=0;){
-        if(s[i] >= '0' && s[i] <= '9')
-        {
-            currentNum = currentNum * 10 + s[i] - '0';
-            isBeforeDigit = 1;
-            i = i + 1;
+    for (int i = 0, k = 0; i <= expr_len;) {
+        if (s[i] >= '0' && s[i] <= '9') {
+            currentNum[k++] = s[i++];
+            continue;
         }
-         else 
-	  {
-		  if (isBeforeDigit != 0) {
-			  opndTop = opndTop+1; opnd[opndTop] = currentNum;
-			  currentNum = 0;
-			  isBeforeDigit = 0;
-		  }
-		  else if ( s[i] == '-') {
-              opndTop = opndTop+1;opnd[opndTop] = 0;
-          }
 
-		  ord1 = optr[optrTop];
-		  ord2 = s[i];
-		  order = orderBetween(ord1, ord2);
-		  if(order == 1) 
-		  {
-			  optrTop=optrTop+1;optr[optrTop] = s[i]; i = i+1; 
-		  }
-		  else if(order == 0) 
-		  {
-			  op = optr[optrTop]; optrTop = optrTop  - 1;
-			  pOpnd2 = opnd[opndTop]; opndTop = opndTop  - 1;
-			  pOpnd1 = opnd[opndTop]; opndTop = opndTop  - 1;
-			  opndTop=opndTop+1;opnd[opndTop] = calcu(pOpnd1, op, pOpnd2);
-		  }
-		  else if(order == 2) 
-		  {
-			  optrTop = optrTop  - 1; i = i+1;
-		  }
-	  }
+        if (k != 0) {
+            pushNum(&opnd, atoi(currentNum));
+            memset(currentNum, 0, 15);
+            k = 0;
+        }
+
+        char result = orderBetweenOp(topOp(&optr), s[i]);
+        if (result == '<') {
+            pushOp(&optr, s[i++]);
+        } else if (result == '=') {
+            popOp(&optr);
+            i++;
+        } else if (result == '>') {
+            int a = popNum(&opnd);
+            int b = popNum(&opnd);
+            char op = popOp(&optr);
+            pushNum(&opnd, calc(b, a, op));
+        }
     }
-   	res = opnd[opndTop];
-    printf("%g",res);
+    printf("%d\n", popNum(&opnd));
     return 0;
 }

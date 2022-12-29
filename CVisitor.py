@@ -254,11 +254,6 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
-    # Visit a parse tree produced by CParser#vcSpecificModifer.
-    def visitVcSpecificModifer(self, ctx:CParser.VcSpecificModiferContext):
-        return self.visitChildren(ctx)
-
-
     # Visit a parse tree produced by CParser#gccDeclaratorExtension.
     def visitGccDeclaratorExtension(self, ctx:CParser.GccDeclaratorExtensionContext):
         return self.visitChildren(ctx)
@@ -399,8 +394,33 @@ class CVisitor(ParseTreeVisitor):
         return self.visitChildren(ctx)
 
 
+    # Visit a parse tree produced by CParser#ifStatement.
+    def visitIfStatement(self, ctx:CParser.IfStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#switchStatement.
+    def visitSwitchStatement(self, ctx:CParser.SwitchStatementContext):
+        return self.visitChildren(ctx)
+
+
     # Visit a parse tree produced by CParser#iterationStatement.
     def visitIterationStatement(self, ctx:CParser.IterationStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#whileStatement.
+    def visitWhileStatement(self, ctx:CParser.WhileStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#doWhileStatement.
+    def visitDoWhileStatement(self, ctx:CParser.DoWhileStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#forStatement.
+    def visitForStatement(self, ctx:CParser.ForStatementContext):
         return self.visitChildren(ctx)
 
 
@@ -421,6 +441,31 @@ class CVisitor(ParseTreeVisitor):
 
     # Visit a parse tree produced by CParser#jumpStatement.
     def visitJumpStatement(self, ctx:CParser.JumpStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#gotoStatement.
+    def visitGotoStatement(self, ctx:CParser.GotoStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#continueStatement.
+    def visitContinueStatement(self, ctx:CParser.ContinueStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#breakStatement.
+    def visitBreakStatement(self, ctx:CParser.BreakStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#returnStatement.
+    def visitReturnStatement(self, ctx:CParser.ReturnStatementContext):
+        return self.visitChildren(ctx)
+
+
+    # Visit a parse tree produced by CParser#gotoGCCStatement.
+    def visitGotoGCCStatement(self, ctx:CParser.GotoGCCStatementContext):
         return self.visitChildren(ctx)
 
 

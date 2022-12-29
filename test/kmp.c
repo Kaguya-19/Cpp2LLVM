@@ -1,4 +1,9 @@
 #include <stdio.h>
+
+int printf(const char *format, ...);
+int gets(const char *format, ...);
+int strlen(const char *s);
+
 int main() {
 	char text[1024];
 	char key[1024];
