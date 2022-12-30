@@ -5,6 +5,8 @@ from CParser import CParser
 from CVisitor import CVisitor
 from llvmlite import ir
 
+
+# Type
 CHAR_TYPE = ir.IntType(8)
 INT_TYPE = ir.IntType(32)
 FLOAT_TYPE = ir.FloatType()
@@ -12,12 +14,14 @@ DOUBLE_TYPE = ir.DoubleType()
 VOID_TYPE = ir.VoidType()
 BOOL_TYPE = ir.IntType(1)
 
+
+# Type
 BASE_TYPE = 0
 ARRAY_TYPE = 1
 FUNCTION_TYPE = 2
 STRUCT_TYPE = 3
 
-class SymbolTable:
+class SymbolTable: # symbol table for each level
     def __init__(self, parent=None):
         self.parent = parent
         self.table = {}
@@ -30,10 +34,10 @@ class SymbolTable:
 
     def addLevel(self):
         self.children = SymbolTable(self)
-        return self.children
+        return self.children # return the child level
 
     def exitLevel(self):
-        return self.parent
+        return self.parent # return the parent level
 
     def getType(self, name):
         if name in self.table.keys():
@@ -217,7 +221,7 @@ class myCVisitor(CVisitor):
             |   argumentExpressionList ',' assignmentExpression
             ;
         '''
-        resultArg = []
+        resultArg = [] #list of llvm value
         if ctx.argumentExpressionList():
             resultArg = self.visit(ctx.argumentExpressionList())
         resultArg.append(self.visit(ctx.assignmentExpression()))
@@ -231,7 +235,7 @@ class myCVisitor(CVisitor):
             ;   
         '''
         if len(ctx.children) == 1:
-            condition = self.visit(ctx.children[0])
+            condition = self.visit(ctx.children[0]) 
             return condition
         elif len(ctx.children) == 3:
             unaryExpr, unaryExprPtr = self.visit(ctx.children[0])
@@ -684,7 +688,7 @@ class myCVisitor(CVisitor):
                     typeList.append(dec[0])
                 tempStruct = ir.global_context.get_identified_type(name=structName)
                 tempStruct.set_body(*typeList)
-                self.myStructTable.insert(structName, tempStruct, paramList)
+                self.myStructTable.insert(structName, tempStruct, paramList) # insert struct to symbol table
                 return tempStruct
         else:
             structName = ctx.Identifier().getText()
@@ -788,7 +792,7 @@ class myCVisitor(CVisitor):
 
         decList = self.visit(ctx.initDeclaratorList())
         for name, init_val in decList:
-            # system function declaration
+            # function declaration
             if isinstance(name, tuple):
                 funcName, func_params = name
                 args = [arg for arg, _ in func_params]
