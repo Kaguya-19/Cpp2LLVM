@@ -64,11 +64,11 @@ class StructTable:
             return self.table[name]['ptr']
         raise SemanticError("param name not found")
 
-    def getParamRank(self, name, param_name):
+    def getParamRank(self, name, paramName):
         if name not in self.table.keys():
             raise SemanticError("param name not found")
         for i,_ in enumerate(self.table[name]['paramList']):
-            if self.table[name]['paramList'][i]['name'] == param_name:
+            if self.table[name]['paramList'][i]['name'] == paramName:
                 return i
         
 
@@ -95,10 +95,10 @@ class myCVisitor(CVisitor):
         
 
         self.builder = None
-        self.symbol_table = SymbolTable()
-        self.continue_to = None
-        self.break_to = None
-        self.struct_table = StructTable()
+        self.mySymbolTable = SymbolTable()
+        self.continueTo = None
+        self.breakTo = None
+        self.myStructTable = StructTable()
     
     def visitPrimaryExpression(self, ctx: CParser.PrimaryExpressionContext):
         '''
@@ -111,31 +111,31 @@ class myCVisitor(CVisitor):
         '''
         if len(ctx.children) == 1:
             if ctx.Identifier():
-                temp_iden = ctx.Identifier().getText()
-                iden_value = self.symbol_table.getValue(temp_iden)
-                if iden_value is None:
-                    raise SemanticError("undefined variable " + temp_iden, ctx)
-                return iden_value, True
+                tempIdentification = ctx.Identifier().getText()
+                identificationValue = self.mySymbolTable.getValue(tempIdentification)
+                if identificationValue is None:
+                    raise SemanticError("undefined variable " + tempIdentification, ctx)
+                return identificationValue, True
             elif ctx.Constant():
-                temp_const = ctx.Constant().getText()
-                if temp_const.isdigit():
-                    return ir.Constant(INT_TYPE, int(temp_const)), False
-                elif temp_const[0] == "'":
-                    temp_const = eval(temp_const)
-                    return ir.Constant(CHAR_TYPE, ord(temp_const)), False
+                tempConst = ctx.Constant().getText()
+                if tempConst.isdigit():
+                    return ir.Constant(INT_TYPE, int(tempConst)), False
+                elif tempConst[0] == "'":
+                    tempConst = eval(tempConst)
+                    return ir.Constant(CHAR_TYPE, ord(tempConst)), False
                 else:
-                    return ir.Constant(FLOAT_TYPE, float(temp_const)), False
+                    return ir.Constant(FLOAT_TYPE, float(tempConst)), False
             elif ctx.StringLiteral():
-                temp_str_literal = ctx.StringLiteral()[0].getText()
+                tmpStrLiteral = ctx.StringLiteral()[0].getText()
                 # '\n' -> '
-                temp_str_literal = eval(temp_str_literal)
+                tmpStrLiteral = eval(tmpStrLiteral)
                 # to utf8
-                llvm_str = [ir.Constant(CHAR_TYPE, ord(c)) for c in temp_str_literal]
-                llvm_str.append(ir.Constant(CHAR_TYPE, 0))
-                temp_addr = self.builder.alloca(ir.ArrayType(CHAR_TYPE, len(llvm_str)))
-                self.builder.store(ir.Constant(ir.ArrayType(CHAR_TYPE, len(llvm_str)), llvm_str), temp_addr)
-                temp_addr = self.builder.bitcast(temp_addr, ir.PointerType(CHAR_TYPE))
-                return temp_addr, False
+                llvmStr = [ir.Constant(CHAR_TYPE, ord(c)) for c in tmpStrLiteral]
+                llvmStr.append(ir.Constant(CHAR_TYPE, 0))
+                tempAddr = self.builder.alloca(ir.ArrayType(CHAR_TYPE, len(llvmStr)))
+                self.builder.store(ir.Constant(ir.ArrayType(CHAR_TYPE, len(llvmStr)), llvmStr), tempAddr)
+                tempAddr = self.builder.bitcast(tempAddr, ir.PointerType(CHAR_TYPE))
+                return tempAddr, False
         else:
             return self.visit(ctx.children[1]), False        
 
@@ -155,59 +155,59 @@ class myCVisitor(CVisitor):
             primary_expr = self.visit(ctx.children[0])
             return primary_expr
         else:
-            postfix_expr, postfix_expr_ptr = self.visit(ctx.children[0])
-            if postfix_expr_ptr:
+            postfixExpr, postfixExprPtr = self.visit(ctx.children[0])
+            if postfixExprPtr:
                 if ctx.children[1].getText() == '[': #array
-                    baseAddr = self.builder.load(postfix_expr)
+                    baseAddr = self.builder.load(postfixExpr)
                     arrayType = self.builder.load(baseAddr).type
-                    ptr_type = ir.PointerType(ir.ArrayType(arrayType, 0))
-                    postfix_expr_ptr = self.builder.bitcast(baseAddr, ptr_type)
-                    postfix_expression_index = self.visit(ctx.children[2])
-                    postfix_expression_indexs = [ir.Constant(INT_TYPE, 0), postfix_expression_index]
-                    postfix_expr_ptr = self.builder.gep(postfix_expr_ptr, postfix_expression_indexs)
-                    return postfix_expr_ptr, True
+                    ptrType = ir.PointerType(ir.ArrayType(arrayType, 0))
+                    postfixExprPtr = self.builder.bitcast(baseAddr, ptrType)
+                    postfixExpressionindex = self.visit(ctx.children[2])
+                    postfixExpressionIndexs = [ir.Constant(INT_TYPE, 0), postfixExpressionindex]
+                    postfixExprPtr = self.builder.gep(postfixExprPtr, postfixExpressionIndexs)
+                    return postfixExprPtr, True
                 elif ctx.children[1].getText() == '(': #function
                     if ctx.argumentExpressionList():
                         arg_list = self.visit(ctx.argumentExpressionList())
                     else:
                         arg_list = []
-                    return self.builder.call(postfix_expr, arg_list), False
+                    return self.builder.call(postfixExpr, arg_list), False
                 elif ctx.children[1].getText() == '.': #struct
-                    postfix_expr = ctx.children[0]
+                    postfixExpr = ctx.children[0]
                     identifier = ctx.children[2]
-                    postfix_expr_ptr = self.symbol_table.getValue(postfix_expr.getText())
-                    iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.name
+                    postfixExprPtr = self.mySymbolTable.getValue(postfixExpr.getText())
+                    idenIndex = self.myStructTable.getParamRank(postfixExprPtr.type.pointee.name
                                                                               , identifier.getText())
                 
-                    iden_indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, iden_index)]
-                    postfix_expr_ptr = self.builder.gep(postfix_expr_ptr
-                                                                      , iden_indexs)
-                    return postfix_expr_ptr, True
+                    idenIndexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, idenIndex)]
+                    postfixExprPtr = self.builder.gep(postfixExprPtr
+                                                                      , idenIndexs)
+                    return postfixExprPtr, True
                 elif ctx.children[1].getText() == '->': #struct pointer
-                    postfix_expr = ctx.children[0]
+                    postfixExpr = ctx.children[0]
                     identifier = ctx.children[2]
-                    postfix_expr_ptr = self.symbol_table.getValue(postfix_expr.getText())
-                    iden_index = self.struct_table.getParamRank(postfix_expr_ptr.type.pointee.pointee.name
+                    postfixExprPtr = self.mySymbolTable.getValue(postfixExpr.getText())
+                    idenIndex = self.myStructTable.getParamRank(postfixExprPtr.type.pointee.pointee.name
                                                                               , identifier.getText())
                 
-                    iden_indexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, iden_index)]
-                    postfix_expr_ptr = self.builder.gep(self.builder.load(postfix_expr_ptr)
-                                                                      , iden_indexs)
-                    return postfix_expr_ptr, True
+                    idenIndexs = [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, idenIndex)]
+                    postfixExprPtr = self.builder.gep(self.builder.load(postfixExprPtr)
+                                                                      , idenIndexs)
+                    return postfixExprPtr, True
                 elif ctx.children[1].getText() == '++': #++
-                    postfix_expr_ptr = postfix_expr
-                    postfix_expr = self.builder.load(postfix_expr_ptr)
-                    self.builder.store(postfix_expr, postfix_expr_ptr)
-                    edited = self.builder.add(postfix_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(edited, postfix_expr_ptr)
-                    return postfix_expr, False
+                    postfixExprPtr = postfixExpr
+                    postfixExpr = self.builder.load(postfixExprPtr)
+                    self.builder.store(postfixExpr, postfixExprPtr)
+                    edited = self.builder.add(postfixExpr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(edited, postfixExprPtr)
+                    return postfixExpr, False
                 elif ctx.children[1].getText() == '--':
-                    postfix_expr_ptr = postfix_expr
-                    postfix_expr = self.builder.load(postfix_expr_ptr)
-                    self.builder.store(postfix_expr, postfix_expr_ptr)
-                    edited = self.builder.sub(postfix_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(edited, postfix_expr_ptr)
-                    return postfix_expr, False
+                    postfixExprPtr = postfixExpr
+                    postfixExpr = self.builder.load(postfixExprPtr)
+                    self.builder.store(postfixExpr, postfixExprPtr)
+                    edited = self.builder.sub(postfixExpr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(edited, postfixExprPtr)
+                    return postfixExpr, False
         
 
     def visitArgumentExpressionList(self, ctx: CParser.ArgumentExpressionListContext):
@@ -217,11 +217,11 @@ class myCVisitor(CVisitor):
             |   argumentExpressionList ',' assignmentExpression
             ;
         '''
-        result_arg = []
+        resultArg = []
         if ctx.argumentExpressionList():
-            result_arg = self.visit(ctx.argumentExpressionList())
-        result_arg.append(self.visit(ctx.assignmentExpression()))
-        return result_arg
+            resultArg = self.visit(ctx.argumentExpressionList())
+        resultArg.append(self.visit(ctx.assignmentExpression()))
+        return resultArg
 
     def visitAssignmentExpression(self, ctx: CParser.AssignmentExpressionContext):
         '''
@@ -234,43 +234,43 @@ class myCVisitor(CVisitor):
             condition = self.visit(ctx.children[0])
             return condition
         elif len(ctx.children) == 3:
-            unary_expr, unary_expr_ptr = self.visit(ctx.children[0])
-            origin = self.builder.load(unary_expr)
-            if unary_expr_ptr is True:
-                assign_optr = self.visit(ctx.children[1])
-                assign_expr = self.visit(ctx.children[2])
-                if assign_optr == '=':
-                    return self.builder.store(assign_expr, unary_expr)
-                elif assign_optr == '<<=':
-                    edited = self.builder.shl(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '>>=':
-                    edited = self.builder.ashr(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '&=':
-                    edited = self.builder.and_(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '^=':
-                    edited = self.builder.xor(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '|=':
-                    edited = self.builder.or_(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '*=':
-                    edited = self.builder.mul(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '/=':
-                    edited = self.builder.sdiv(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '+=':
-                    edited = self.builder.add(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '-=':
-                    edited = self.builder.sub(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
-                elif assign_optr == '%=':
-                    edited = self.builder.srem(origin, assign_expr)
-                    return self.builder.store(edited, unary_expr)
+            unaryExpr, unaryExprPtr = self.visit(ctx.children[0])
+            origin = self.builder.load(unaryExpr)
+            if unaryExprPtr is True:
+                assignOptr = self.visit(ctx.children[1])
+                assignExpr = self.visit(ctx.children[2])
+                if assignOptr == '=':
+                    return self.builder.store(assignExpr, unaryExpr)
+                elif assignOptr == '<<=':
+                    edited = self.builder.shl(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '>>=':
+                    edited = self.builder.ashr(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '&=':
+                    edited = self.builder.and_(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '^=':
+                    edited = self.builder.xor(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '|=':
+                    edited = self.builder.or_(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '*=':
+                    edited = self.builder.mul(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '/=':
+                    edited = self.builder.sdiv(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '+=':
+                    edited = self.builder.add(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '-=':
+                    edited = self.builder.sub(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
+                elif assignOptr == '%=':
+                    edited = self.builder.srem(origin, assignExpr)
+                    return self.builder.store(edited, unaryExpr)
 
     def visitInclusiveOrExpression(self, ctx: CParser.InclusiveOrExpressionContext):
         '''
@@ -279,12 +279,12 @@ class myCVisitor(CVisitor):
             |   inclusiveOrExpression '|' exclusiveOrExpression
             ;
         '''
-        exc_or_expr = self.visit(ctx.children[len(ctx.children) - 1])
+        myExcExpr = self.visit(ctx.children[len(ctx.children) - 1])
         if len(ctx.children) == 1:
-            return exc_or_expr
+            return myExcExpr
         elif len(ctx.children) == 3:
-            inc_or_expr = self.visit(ctx.children[0])
-            return self.builder.or_(inc_or_expr, exc_or_expr)
+            myIncExpr = self.visit(ctx.children[0])
+            return self.builder.or_(myIncExpr, myExcExpr)
 
     def visitExclusiveOrExpression(self, ctx: CParser.ExclusiveOrExpressionContext):
         '''
@@ -293,12 +293,12 @@ class myCVisitor(CVisitor):
             |   exclusiveOrExpression '^' andExpression
             ;
         '''
-        and_expr = self.visit(ctx.children[len(ctx.children) - 1])
+        myExpr = self.visit(ctx.children[len(ctx.children) - 1])
         if len(ctx.children) == 1:
-            return and_expr
+            return myExpr
         elif len(ctx.children) == 3:
-            exc_or_expr = self.visit(ctx.children[0])
-            return self.builder.xor(exc_or_expr, and_expr)
+            isExcExpr = self.visit(ctx.children[0])
+            return self.builder.xor(isExcExpr, myExpr)
 
     def visitAndExpression(self, ctx: CParser.AndExpressionContext):
         '''
@@ -307,12 +307,12 @@ class myCVisitor(CVisitor):
             |   andExpression '&' equalityExpression
             ;
         '''
-        equ_expr = self.visit(ctx.children[len(ctx.children) - 1])
+        equExpr = self.visit(ctx.children[len(ctx.children) - 1])
         if len(ctx.children) == 1:
-            return equ_expr
+            return equExpr
         elif len(ctx.children) == 3:
-            and_expr = self.visit(ctx.children[0])
-            return self.builder.and_(and_expr, equ_expr)
+            andExpr = self.visit(ctx.children[0])
+            return self.builder.and_(andExpr, equExpr)
         
     def visitLogicalAndExpression(self, ctx: CParser.LogicalAndExpressionContext):
             '''
@@ -321,24 +321,24 @@ class myCVisitor(CVisitor):
             |   logicalAndExpression '&&' inclusiveOrExpression
             ;
             '''
-            inc_or_expr = self.visit(ctx.children[len(ctx.children) - 1])
+            incExpr = self.visit(ctx.children[len(ctx.children) - 1])
             if len(ctx.children) == 1:
-                return inc_or_expr
+                return incExpr
             elif len(ctx.children) == 3:
-                andand_expr = self.visit(ctx.children[0])
-            if inc_or_expr.type != FLOAT_TYPE:
-                inc_or_expr = self.builder.icmp_signed(cmpop='!=', lhs=inc_or_expr
+                andExpr = self.visit(ctx.children[0])
+            if incExpr.type != FLOAT_TYPE:
+                incExpr = self.builder.icmp_signed(cmpop='!=', lhs=incExpr
                                                                    , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                inc_or_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=inc_or_expr
+                incExpr = self.builder.fcmp_ordered(cmpop='!=', lhs=incExpr
                                                                     , rhs=ir.Constant(FLOAT_TYPE, 0))
-            if andand_expr.type != FLOAT_TYPE:
-                andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
+            if andExpr.type != FLOAT_TYPE:
+                andExpr = self.builder.icmp_signed(cmpop='!=', lhs=andExpr
                                                                   , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
+                andExpr = self.builder.fcmp_ordered(cmpop='!=', lhs=andExpr
                                                                    , rhs=ir.Constant(FLOAT_TYPE, 0))
-            return self.builder.and_(andand_expr, inc_or_expr)
+            return self.builder.and_(andExpr, incExpr)
 
     def visitLogicalOrExpression(self, ctx: CParser.LogicalOrExpressionContext):
         '''
@@ -347,24 +347,24 @@ class myCVisitor(CVisitor):
             |   logicalOrExpression '||' logicalAndExpression
             ;
         '''
-        andand_expr = self.visit(ctx.children[len(ctx.children)-1])
+        andExpr = self.visit(ctx.children[len(ctx.children)-1])
         if len(ctx.children) == 1:
-            return andand_expr
+            return andExpr
         elif len(ctx.children) == 3:
-            oror_expr = self.visit(ctx.children[0])
-            if oror_expr.type != FLOAT_TYPE:
-                oror_expr = self.builder.icmp_signed(cmpop='!=', lhs=oror_expr
+            orExpr = self.visit(ctx.children[0])
+            if orExpr.type != FLOAT_TYPE:
+                orExpr = self.builder.icmp_signed(cmpop='!=', lhs=orExpr
                                                                  , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                oror_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=oror_expr
+                orExpr = self.builder.fcmp_ordered(cmpop='!=', lhs=orExpr
                                                                   , rhs=ir.Constant(FLOAT_TYPE, 0))
-            if andand_expr.type != FLOAT_TYPE:
-                andand_expr = self.builder.icmp_signed(cmpop='!=', lhs=andand_expr
+            if andExpr.type != FLOAT_TYPE:
+                andExpr = self.builder.icmp_signed(cmpop='!=', lhs=andExpr
                                                                   , rhs=ir.Constant(INT_TYPE, 0))
             else:
-                andand_expr = self.builder.fcmp_ordered(cmpop='!=', lhs=andand_expr
+                andExpr = self.builder.fcmp_ordered(cmpop='!=', lhs=andExpr
                                                                    , rhs=ir.Constant(FLOAT_TYPE, 0))
-            return self.builder.or_(oror_expr, andand_expr)
+            return self.builder.or_(orExpr, andExpr)
         
     def visitConditionalExpression(self, ctx: CParser.ConditionalExpressionContext):
         '''
@@ -372,13 +372,13 @@ class myCVisitor(CVisitor):
             :   logicalOrExpression ('?' expression ':' conditionalExpression)?
             ;
         '''
-        oror_expr = self.visit(ctx.children[0])
+        orExpr = self.visit(ctx.children[0])
         if len(ctx.children) == 1:
-            return oror_expr
+            return orExpr
         elif len(ctx.children) == 5:
             expr = self.visit(ctx.children[2])
-            condition_expr = self.visit(ctx.children[4])
-            return self.builder.select(oror_expr, expr, condition_expr)
+            conditionExpr = self.visit(ctx.children[4])
+            return self.builder.select(orExpr, expr, conditionExpr)
         
     def visitEqualityExpression(self, ctx: CParser.EqualityExpressionContext):
         '''
@@ -388,22 +388,22 @@ class myCVisitor(CVisitor):
             |   equalityExpression '!=' relationalExpression
             ;
         '''
-        rel_expr = self.visit(ctx.children[len(ctx.children)-1])
+        relExpr = self.visit(ctx.children[len(ctx.children)-1])
         if len(ctx.children) == 1:
-            return rel_expr
+            return relExpr
         elif len(ctx.children) == 3:
-            equ_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if equ_expr.type == FLOAT_TYPE or rel_expr.type == FLOAT_TYPE:
-                if equ_expr.type != FLOAT_TYPE:
-                    equ_expr = self.builder.sitofp(equ_expr, FLOAT_TYPE)
-                if rel_expr.type != FLOAT_TYPE:
-                    rel_expr = self.builder.sitofp(rel_expr, FLOAT_TYPE)
-                return self.builder.fcmp_ordered(cmpop=optr_expr.getText(), lhs=equ_expr
-                                                 , rhs=rel_expr)
+            equExpr = self.visit(ctx.children[0])
+            optrExpr = ctx.children[1]
+            if equExpr.type == FLOAT_TYPE or relExpr.type == FLOAT_TYPE:
+                if equExpr.type != FLOAT_TYPE:
+                    equExpr = self.builder.sitofp(equExpr, FLOAT_TYPE)
+                if relExpr.type != FLOAT_TYPE:
+                    relExpr = self.builder.sitofp(relExpr, FLOAT_TYPE)
+                return self.builder.fcmp_ordered(cmpop=optrExpr.getText(), lhs=equExpr
+                                                 , rhs=relExpr)
             else:
-                return self.builder.icmp_signed(cmpop=optr_expr.getText(), lhs=equ_expr
-                                                , rhs=rel_expr)
+                return self.builder.icmp_signed(cmpop=optrExpr.getText(), lhs=equExpr
+                                                , rhs=relExpr)
 
 
     def visitRelationalExpression(self, ctx: CParser.RelationalExpressionContext):
@@ -416,22 +416,22 @@ class myCVisitor(CVisitor):
             |   relationalExpression '>=' shiftExpression
             ;
         '''
-        shift_expr = self.visit(ctx.children[len(ctx.children)-1])
+        shiftExpr = self.visit(ctx.children[len(ctx.children)-1])
         if len(ctx.children) == 1:
-            return shift_expr
+            return shiftExpr
         elif len(ctx.children) == 3:
-            rel_expr = self.visit(ctx.children[0])
-            optr_expr = ctx.children[1]
-            if rel_expr.type == FLOAT_TYPE or shift_expr.type == FLOAT_TYPE:
-                if shift_expr.type != FLOAT_TYPE:
-                    shift_expr = self.builder.sitofp(shift_expr, FLOAT_TYPE)
-                if rel_expr.type != FLOAT_TYPE:
-                    rel_expr = self.builder.sitofp(rel_expr, FLOAT_TYPE)
-                return self.builder.fcmp_ordered(cmpop=optr_expr.getText(), lhs=rel_expr
-                                                 , rhs=shift_expr)
+            relExpr = self.visit(ctx.children[0])
+            optrExpr = ctx.children[1]
+            if relExpr.type == FLOAT_TYPE or shiftExpr.type == FLOAT_TYPE:
+                if shiftExpr.type != FLOAT_TYPE:
+                    shiftExpr = self.builder.sitofp(shiftExpr, FLOAT_TYPE)
+                if relExpr.type != FLOAT_TYPE:
+                    relExpr = self.builder.sitofp(relExpr, FLOAT_TYPE)
+                return self.builder.fcmp_ordered(cmpop=optrExpr.getText(), lhs=relExpr
+                                                 , rhs=shiftExpr)
             else:
-                return self.builder.icmp_signed(cmpop=optr_expr.getText(), lhs=rel_expr
-                                                , rhs=shift_expr)
+                return self.builder.icmp_signed(cmpop=optrExpr.getText(), lhs=relExpr
+                                                , rhs=shiftExpr)
 
 
     def visitShiftExpression(self, ctx: CParser.ShiftExpressionContext):
@@ -442,15 +442,15 @@ class myCVisitor(CVisitor):
             |   shiftExpression '>>' additiveExpression
             ;
         '''
-        add_expr = self.visit(ctx.children[len(ctx.children) - 1])
+        addExpr = self.visit(ctx.children[len(ctx.children) - 1])
         if len(ctx.children) == 1:
-            return add_expr
+            return addExpr
         elif len(ctx.children) == 3:
-            shift_expr = self.visit(ctx.children[0])
+            shiftExpr = self.visit(ctx.children[0])
             if ctx.children[1].getText() == '<<':
-                return self.builder.shl(shift_expr, add_expr)
+                return self.builder.shl(shiftExpr, addExpr)
             elif ctx.children[1].getText() == '>>':
-                return self.builder.ashr(shift_expr, add_expr)
+                return self.builder.ashr(shiftExpr, addExpr)
 
 
     def visitAdditiveExpression(self, ctx: CParser.AdditiveExpressionContext):
@@ -461,15 +461,15 @@ class myCVisitor(CVisitor):
             |   additiveExpression '-' multiplicativeExpression
             ;
         '''
-        mul_expr = self.visit(ctx.children[len(ctx.children)-1])
+        mulExpr = self.visit(ctx.children[len(ctx.children)-1])
         if len(ctx.children) == 1:
-            return mul_expr
+            return mulExpr
         elif len(ctx.children) == 3:
-            add_expr = self.visit(ctx.children[0])
+            addExpr = self.visit(ctx.children[0])
             if ctx.children[1].getText() == '+':
-                return self.builder.add(add_expr, mul_expr)
+                return self.builder.add(addExpr, mulExpr)
             elif ctx.children[1].getText() == '-':
-                return self.builder.sub(add_expr, mul_expr)
+                return self.builder.sub(addExpr, mulExpr)
 
 
     def visitMultiplicativeExpression(self, ctx: CParser.MultiplicativeExpressionContext):
@@ -481,17 +481,17 @@ class myCVisitor(CVisitor):
             |   multiplicativeExpression '%' castExpression
             ;
         '''
-        cast_expr, _ = self.visit(ctx.children[len(ctx.children) - 1])
+        castExpr, _ = self.visit(ctx.children[len(ctx.children) - 1])
         if len(ctx.children) == 1:
-            return cast_expr
+            return castExpr
         elif len(ctx.children) == 3:
-            mul_expr = self.visit(ctx.children[0])
+            mulExpr = self.visit(ctx.children[0])
             if ctx.children[1].getText() == '*':
-                return self.builder.mul(mul_expr, cast_expr)
+                return self.builder.mul(mulExpr, castExpr)
             elif ctx.children[1].getText() == '/':
-                return self.builder.sdiv(mul_expr, cast_expr)
+                return self.builder.sdiv(mulExpr, castExpr)
             elif ctx.children[1].getText() == '%':
-                return self.builder.srem(mul_expr, cast_expr)
+                return self.builder.srem(mulExpr, castExpr)
 
 
     def visitCastExpression(self, ctx: CParser.CastExpressionContext):
@@ -503,16 +503,16 @@ class myCVisitor(CVisitor):
             ;
         '''
         if len(ctx.children) == 1:
-            unary_expr, unary_expr_ptr = self.visit(ctx.children[0])
-            if unary_expr_ptr is True:
-                unary_expr_ptr = unary_expr
-                unary_expr = self.builder.load(unary_expr_ptr)
-            return unary_expr, unary_expr_ptr
+            unaryExpr, unaryExprPtr = self.visit(ctx.children[0])
+            if unaryExprPtr is True:
+                unaryExprPtr = unaryExpr
+                unaryExpr = self.builder.load(unaryExprPtr)
+            return unaryExpr, unaryExprPtr
         elif len(ctx.children) == 4 or len(ctx.children) == 5:
-            cast_expr, cast_expr_pointer = self.visit(ctx.children[len(ctx.children)-1])
-            type_name = self.visit(ctx.children[len(ctx.children)-3])
-            cast_expr = self.builder.bitcast(cast_expr, type_name)
-            return cast_expr, cast_expr_pointer
+            castExpr, cast_expr_pointer = self.visit(ctx.children[len(ctx.children)-1])
+            typeName = self.visit(ctx.children[len(ctx.children)-3])
+            castExpr = self.builder.bitcast(castExpr, typeName)
+            return castExpr, cast_expr_pointer
 
     def visitUnaryExpression(self, ctx: CParser.UnaryExpressionContext):
         '''
@@ -524,47 +524,47 @@ class myCVisitor(CVisitor):
             ;
         '''
         if len(ctx.children) == 1:
-            postfix_expr, _ = self.visit(ctx.children[0])
-            return postfix_expr, _
+            postfixExpr, _ = self.visit(ctx.children[0])
+            return postfixExpr, _
         elif len(ctx.children) == 2:
             optr = ctx.children[0]
             if optr.getText() == '++':
-                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
-                if unary_expr_ptr is True:
-                    unary_expr_ptr = unary_expr
-                    unary_expr = self.builder.load(unary_expr_ptr)
-                    unary_expr = self.builder.add(unary_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(unary_expr, unary_expr_ptr)
-                return unary_expr, unary_expr_ptr
+                unaryExpr, unaryExprPtr = self.visit(ctx.children[1])
+                if unaryExprPtr is True:
+                    unaryExprPtr = unaryExpr
+                    unaryExpr = self.builder.load(unaryExprPtr)
+                    unaryExpr = self.builder.add(unaryExpr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(unaryExpr, unaryExprPtr)
+                return unaryExpr, unaryExprPtr
             elif optr.getText() == '--':
-                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
-                if unary_expr_ptr is True:
-                    unary_expr_ptr = unary_expr
-                    unary_expr = self.builder.load(unary_expr_ptr)
-                    unary_expr = self.builder.sub(unary_expr, ir.Constant(INT_TYPE, 1))
-                    self.builder.store(unary_expr, unary_expr_ptr)
-                return unary_expr, unary_expr_ptr
+                unaryExpr, unaryExprPtr = self.visit(ctx.children[1])
+                if unaryExprPtr is True:
+                    unaryExprPtr = unaryExpr
+                    unaryExpr = self.builder.load(unaryExprPtr)
+                    unaryExpr = self.builder.sub(unaryExpr, ir.Constant(INT_TYPE, 1))
+                    self.builder.store(unaryExpr, unaryExprPtr)
+                return unaryExpr, unaryExprPtr
             else:
-                unary_expr, unary_expr_ptr = self.visit(ctx.children[1])
+                unaryExpr, unaryExprPtr = self.visit(ctx.children[1])
                 if optr.getText() == '&':
-                    return unary_expr_ptr, False
+                    return unaryExprPtr, False
                 elif optr.getText() == '*':
-                    if unary_expr_ptr is True:
-                        unary_expr_ptr = unary_expr
-                        unary_expr = self.builder.load(unary_expr_ptr)
-                    return unary_expr, unary_expr_ptr
+                    if unaryExprPtr is True:
+                        unaryExprPtr = unaryExpr
+                        unaryExpr = self.builder.load(unaryExprPtr)
+                    return unaryExpr, unaryExprPtr
                 elif optr.getText() == '+':
-                    return unary_expr, False
+                    return unaryExpr, False
                 elif optr.getText() == '-':
-                    return self.builder.neg(unary_expr), False
+                    return self.builder.neg(unaryExpr), False
                 elif optr.getText() == '~':
-                    return self.builder.not_(unary_expr), False
+                    return self.builder.not_(unaryExpr), False
                 elif optr.getText() == '!':
-                    if unary_expr.type != FLOAT_TYPE:
-                        return self.builder.icmp_signed(cmpop='==', lhs=unary_expr
+                    if unaryExpr.type != FLOAT_TYPE:
+                        return self.builder.icmp_signed(cmpop='==', lhs=unaryExpr
                                                         , rhs=ir.Constant(INT_TYPE, 0)), False
                     else:
-                        return self.builder.fcmp_ordered(cmpop='==', lhs=unary_expr
+                        return self.builder.fcmp_ordered(cmpop='==', lhs=unaryExpr
                                                          , rhs=ir.Constant(FLOAT_TYPE, 0)), False
 
 
@@ -574,25 +574,25 @@ class myCVisitor(CVisitor):
             :   declarationSpecifiers? declarator declarationList? compoundStatement
             ;
         '''
-        func_type = self.visit(ctx.declarationSpecifiers())
-        func_name, params = self.visit(ctx.declarator())
-        llvm_type = ir.FunctionType(func_type, [param[0] for param in params])
-        llvm_func = ir.Function(self.module, llvm_type, name=func_name)
-        self.symbol_table.insert(func_name, FUNCTION_TYPE, llvm_func)
-        self.symbol_table = self.symbol_table.addLevel()
+        funcType = self.visit(ctx.declarationSpecifiers())
+        funcName, params = self.visit(ctx.declarator())
+        llvmType = ir.FunctionType(funcType, [param[0] for param in params])
+        llvmFunc = ir.Function(self.module, llvmType, name=funcName)
+        self.mySymbolTable.insert(funcName, FUNCTION_TYPE, llvmFunc)
+        self.mySymbolTable = self.mySymbolTable.addLevel()
         
-        func_block = llvm_func.append_basic_block(name= func_name+"entry")
+        func_block = llvmFunc.append_basic_block(name= funcName+"entry")
         self.builder = ir.IRBuilder(func_block)
         
         for i, param in enumerate(params):
-            param_type, param_name = param
-            addr = self.builder.alloca(param_type, name=param_name)
-            self.builder.store(llvm_func.args[i], addr)
-            self.symbol_table.insert(param_name, param_type, addr)
+            paramType, paramName = param
+            addr = self.builder.alloca(paramType, name=paramName)
+            self.builder.store(llvmFunc.args[i], addr)
+            self.mySymbolTable.insert(paramName, paramType, addr)
         self.visit(ctx.compoundStatement())
         if not self.builder.block.is_terminated:
             self.builder.ret_void()
-        self.symbol_table = self.symbol_table.exitLevel()
+        self.mySymbolTable = self.mySymbolTable.exitLevel()
 
     def visitDeclarator(self, ctx: CParser.DeclaratorContext):  
         '''
@@ -612,22 +612,22 @@ class myCVisitor(CVisitor):
             |   directDeclarator '(' identifierList? ')'
             ;
         '''
-        iden_name = self.visit(ctx.getChild(0))
+        idenName = self.visit(ctx.getChild(0))
         if ctx.Identifier():
-            self.symbol_table.insert(iden_name, (BASE_TYPE, None))
-            return iden_name
+            self.mySymbolTable.insert(idenName, (BASE_TYPE, None))
+            return idenName
         elif ctx.declarator():
             return self.visit(ctx.declarator())
         elif ctx.children[1].getText() == '[':
             length = self.visit(ctx.assignmentExpression())
             btype = (ARRAY_TYPE, length)
-            self.symbol_table.insert(iden_name, type=btype)
-            return iden_name
+            self.mySymbolTable.insert(idenName, type=btype)
+            return idenName
         elif ctx.children[1].getText() == '(':
             btype = (FUNCTION_TYPE, None)
-            self.symbol_table.insert(iden_name, btype)
+            self.mySymbolTable.insert(idenName, btype)
             params = self.visit(ctx.parameterTypeList()) if ctx.parameterTypeList() else []
-            return iden_name, params
+            return idenName, params
 
     def visitTypeSpecifier(self, ctx: CParser.TypeSpecifierContext):
         '''
@@ -673,23 +673,23 @@ class myCVisitor(CVisitor):
             ;
         '''  
         if ctx.structDeclarationList():
-            struct_name = ctx.Identifier().getText()
-            if self.symbol_table.getValue(struct_name):
-                raise SemanticError("Redefinition of struct '{}'".format(struct_name))
+            structName = ctx.Identifier().getText()
+            if self.mySymbolTable.getValue(structName):
+                raise SemanticError("Redefinition of struct '{}'".format(structName))
             else:
-                dec_list = self.visit(ctx.structDeclarationList())
-                param_list, type_list = [], []
-                for dec in dec_list:
-                    param_list.append({'name': dec[1], 'type': dec[0]})
-                    type_list.append(dec[0])
-                temp_struct = ir.global_context.get_identified_type(name=struct_name)
-                temp_struct.set_body(*type_list)
-                self.struct_table.insert(struct_name, temp_struct, param_list)
-                return temp_struct
+                decList = self.visit(ctx.structDeclarationList())
+                paramList, typeList = [], []
+                for dec in decList:
+                    paramList.append({'name': dec[1], 'type': dec[0]})
+                    typeList.append(dec[0])
+                tempStruct = ir.global_context.get_identified_type(name=structName)
+                tempStruct.set_body(*typeList)
+                self.myStructTable.insert(structName, tempStruct, paramList)
+                return tempStruct
         else:
-            struct_name = ctx.Identifier().getText()
-            temp_struct = ir.global_context.get_identified_type(name=struct_name)
-            return temp_struct
+            structName = ctx.Identifier().getText()
+            tempStruct = ir.global_context.get_identified_type(name=structName)
+            return tempStruct
 
     def visitTypedefName(self, ctx: CParser.TypedefNameContext):  
         '''
@@ -706,9 +706,9 @@ class myCVisitor(CVisitor):
             |   structDeclaratorList ',' structDeclarator
             ;
         '''
-        dec_list = self.visit(ctx.structDeclarationList()) if ctx.structDeclarationList() else []
-        dec_list.append(self.visit(ctx.structDeclaration()))
-        return dec_list
+        decList = self.visit(ctx.structDeclarationList()) if ctx.structDeclarationList() else []
+        decList.append(self.visit(ctx.structDeclaration()))
+        return decList
 
     def visitStructDeclaration(self, ctx: CParser.StructDeclarationContext):  
         '''
@@ -786,19 +786,19 @@ class myCVisitor(CVisitor):
         if not ctx.initDeclaratorList():
             return ''
 
-        dec_list = self.visit(ctx.initDeclaratorList())
-        for name, init_val in dec_list:
+        decList = self.visit(ctx.initDeclaratorList())
+        for name, init_val in decList:
             # system function declaration
             if isinstance(name, tuple):
-                func_name, func_params = name
+                funcName, func_params = name
                 args = [arg for arg, _ in func_params]
-                func_type = ir.FunctionType(_type, args, var_arg=True)
-                func = ir.Function(self.module, func_type, name=func_name)
-                self.symbol_table.insert(func_name, type=(FUNCTION_TYPE, None), value=func)
+                funcType = ir.FunctionType(_type, args, var_arg=True)
+                func = ir.Function(self.module, funcType, name=funcName)
+                self.mySymbolTable.insert(funcName, type=(FUNCTION_TYPE, None), value=func)
             # struct declaration
             elif type(_type) == ir.types.IdentifiedStructType:
-                ptr_struct = self.struct_table.getPtr(_type.name)
-                self.symbol_table.insert(name, type=(STRUCT_TYPE, None), value=self.builder.alloca(ptr_struct))
+                ptr_struct = self.myStructTable.getPtr(_type.name)
+                self.mySymbolTable.insert(name, type=(STRUCT_TYPE, None), value=self.builder.alloca(ptr_struct))
             else:
                 self.variableDeclaration(name, init_val, _type, ctx=ctx)
 
@@ -808,7 +808,7 @@ class myCVisitor(CVisitor):
             :   declarationSpecifiers initDeclaratorList ';'
             ;
         '''
-        myType = self.symbol_table.getType(name)
+        myType = self.mySymbolTable.getType(name)
         # array declaration
         if myType[0] == ARRAY_TYPE:
             length = myType[1]
@@ -829,10 +829,10 @@ class myCVisitor(CVisitor):
                     ptr = self.builder.gep(value, indexs)
                     self.builder.store(init_val[i], ptr)
             value = self.builder.bitcast(value, ir.PointerType(_type))
-            temp_ptr = self.builder.alloca(value.type)
-            self.builder.store(value, temp_ptr)
-            value = temp_ptr
-            self.symbol_table.insert(name, myType, value)
+            tempPtr = self.builder.alloca(value.type)
+            self.builder.store(value, tempPtr)
+            value = tempPtr
+            self.mySymbolTable.insert(name, myType, value)
         else:
             if self.builder:
                 value = self.builder.alloca(_type, name=name)
@@ -842,7 +842,7 @@ class myCVisitor(CVisitor):
             if init_val:
                 self.builder.store(init_val, value)
 
-            self.symbol_table.insert(name, myType, value)
+            self.mySymbolTable.insert(name, myType, value)
 
     def visitCompoundStatement(self, ctx):
         '''
@@ -869,9 +869,9 @@ class myCVisitor(CVisitor):
             |   initDeclaratorList ',' initDeclarator
             ;
         '''
-        dec_list = self.visit(ctx.initDeclaratorList()) if ctx.initDeclaratorList() else []
-        dec_list.append(self.visit(ctx.initDeclarator()))
-        return dec_list
+        decList = self.visit(ctx.initDeclaratorList()) if ctx.initDeclaratorList() else []
+        decList.append(self.visit(ctx.initDeclarator()))
+        return decList
 
     def visitInitDeclarator(self, ctx):  
         '''
@@ -905,10 +905,10 @@ class myCVisitor(CVisitor):
             |   initializerList ',' designation? initializer
             ;
         '''
-        init_list = [self.visit(ctx.initializer())]
+        initList = [self.visit(ctx.initializer())]
         if ctx.initializerList():
-            init_list = self.visit(ctx.initializerList()) + init_list
-        return init_list
+            initList = self.visit(ctx.initializerList()) + initList
+        return initList
 
     def visitParameterTypeList(self, ctx: CParser.ParameterTypeListContext): 
         '''
@@ -927,10 +927,10 @@ class myCVisitor(CVisitor):
             |   parameterList ',' parameterDeclaration
             ;
         '''
-        param_list = self.visit(ctx.parameterList()) if ctx.parameterList() else []
+        paramList = self.visit(ctx.parameterList()) if ctx.parameterList() else []
         temp_param = self.visit(ctx.parameterDeclaration())
-        param_list.append(temp_param)
-        return param_list
+        paramList.append(temp_param)
+        return paramList
 
     def visitParameterDeclaration(self, ctx: CParser.ParameterDeclarationContext): 
         '''
@@ -965,8 +965,8 @@ class myCVisitor(CVisitor):
             :   'continue' ';'
             ;
         '''
-        if self.continue_to is not None:
-            self.builder.branch(self.continue_to)
+        if self.continueTo is not None:
+            self.builder.branch(self.continueTo)
         else:
             raise SemanticError("Wrong continue!\n", ctx)
 
@@ -976,8 +976,8 @@ class myCVisitor(CVisitor):
             :   'break' ';'
             ;
         '''
-        if self.break_to is not None:
-            self.builder.branch(self.break_to)
+        if self.breakTo is not None:
+            self.builder.branch(self.breakTo)
         else:
             raise SemanticError("Wrong break!\n", ctx)
 
@@ -1013,39 +1013,39 @@ class myCVisitor(CVisitor):
             :   While '(' expression ')' statement
             ;
         '''
-        self.symbol_table = self.symbol_table.addLevel()
+        self.mySymbolTable = self.mySymbolTable.addLevel()
 
-        block_name = self.builder.block.name
-        cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
-        stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
-        quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
+        blockName = self.builder.block.name
+        condBlock = self.builder.append_basic_block(name='cond'.format(blockName))
+        statBlock = self.builder.append_basic_block(name='stat'.format(blockName))
+        quitBlock = self.builder.append_basic_block(name='quit'.format(blockName))
 
-        last_continue_to = self.continue_to
-        last_break_to = self.break_to
-        self.continue_to = cond_block
-        self.break_to = quit_block
+        lastContinueTo = self.continueTo
+        lastBreakTo = self.breakTo
+        self.continueTo = condBlock
+        self.breakTo = quitBlock
 
         # The condition expression of While
-        self.builder.branch(cond_block)
-        self.builder.position_at_start(cond_block)
+        self.builder.branch(condBlock)
+        self.builder.position_at_start(condBlock)
         expression = self.visit(ctx.expression())
 
         # Judge if jump to statement or quit
-        self.builder.cbranch(expression, stat_block, quit_block)
+        self.builder.cbranch(expression, statBlock, quitBlock)
 
         # The statement of While
-        self.builder.position_at_start(stat_block)
+        self.builder.position_at_start(statBlock)
         self.visit(ctx.statement())
 
         # Jump back to cond
-        self.builder.branch(cond_block)
+        self.builder.branch(condBlock)
 
         # The quit block
-        self.builder.position_at_start(quit_block)
+        self.builder.position_at_start(quitBlock)
 
-        self.continue_to = last_continue_to
-        self.break_to = last_break_to
-        self.symbol_table = self.symbol_table.exitLevel()
+        self.continueTo = lastContinueTo
+        self.breakTo = lastBreakTo
+        self.mySymbolTable = self.mySymbolTable.exitLevel()
 
     def visitDoWhileStatement(self, ctx:CParser.DoWhileStatementContext):
         '''
@@ -1053,37 +1053,37 @@ class myCVisitor(CVisitor):
             :   Do statement While '(' expression ')' ';'
             ;
         '''
-        self.symbol_table = self.symbol_table.addLevel()
+        self.mySymbolTable = self.mySymbolTable.addLevel()
 
-        block_name = self.builder.block.name
-        stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
-        cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
-        quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
+        blockName = self.builder.block.name
+        statBlock = self.builder.append_basic_block(name='stat'.format(blockName))
+        condBlock = self.builder.append_basic_block(name='cond'.format(blockName))
+        quitBlock = self.builder.append_basic_block(name='quit'.format(blockName))
 
-        last_continue_to = self.continue_to
-        last_break_to = self.break_to
-        self.continue_to = cond_block
-        self.break_to = quit_block
+        lastContinueTo = self.continueTo
+        lastBreakTo = self.breakTo
+        self.continueTo = condBlock
+        self.breakTo = quitBlock
 
         # The statement of While
-        self.builder.branch(stat_block)
-        self.builder.position_at_start(stat_block)
+        self.builder.branch(statBlock)
+        self.builder.position_at_start(statBlock)
         self.visit(ctx.statement())
 
         # The condition expression of While
-        self.builder.branch(cond_block)
-        self.builder.position_at_start(cond_block)
+        self.builder.branch(condBlock)
+        self.builder.position_at_start(condBlock)
         expr = self.visit(ctx.expression())
 
         # Judge if jump to statement or quit
-        self.builder.cbranch(expr, stat_block, quit_block)
+        self.builder.cbranch(expr, statBlock, quitBlock)
 
         # The quit block
-        self.builder.position_at_start(quit_block)
+        self.builder.position_at_start(quitBlock)
 
-        self.continue_to = last_continue_to
-        self.break_to = last_break_to
-        self.symbol_table = self.symbol_table.exitLevel()
+        self.continueTo = lastContinueTo
+        self.breakTo = lastBreakTo
+        self.mySymbolTable = self.mySymbolTable.exitLevel()
 
     def visitForStatement(self, ctx:CParser.ForStatementContext):
         '''
@@ -1091,41 +1091,41 @@ class myCVisitor(CVisitor):
             :   For '(' forCondition ')' statement
             ;
         '''
-        self.symbol_table = self.symbol_table.addLevel()
+        self.mySymbolTable = self.mySymbolTable.addLevel()
 
-        block_name = self.builder.block.name
-        cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
-        stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
-        quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
+        blockName = self.builder.block.name
+        condBlock = self.builder.append_basic_block(name='cond'.format(blockName))
+        statBlock = self.builder.append_basic_block(name='stat'.format(blockName))
+        quitBlock = self.builder.append_basic_block(name='quit'.format(blockName))
 
-        last_continue_to = self.continue_to
-        last_break_to = self.break_to
-        self.continue_to = cond_block
-        self.break_to = quit_block
+        lastContinueTo = self.continueTo
+        lastBreakTo = self.breakTo
+        self.continueTo = condBlock
+        self.breakTo = quitBlock
 
-        cond_expr, op_expr = self.visit(ctx.forCondition())
+        condExpr, op_expr = self.visit(ctx.forCondition())
 
         # The condition of For
-        self.builder.branch(cond_block)
-        self.builder.position_at_start(cond_block)
-        cond_value = self.visit(cond_expr)
+        self.builder.branch(condBlock)
+        self.builder.position_at_start(condBlock)
+        condValue = self.visit(condExpr)
 
-        self.builder.cbranch(cond_value, stat_block, quit_block)
-        self.builder.position_at_start(stat_block)
+        self.builder.cbranch(condValue, statBlock, quitBlock)
+        self.builder.position_at_start(statBlock)
         self.visit(ctx.statement())
 
         if op_expr:
             self.visit(op_expr)
 
         # come back to the cond
-        self.builder.branch(cond_block)
+        self.builder.branch(condBlock)
 
         # quit block
-        self.builder.position_at_start(quit_block)
-        self.continue_to = last_continue_to
-        self.break_to = last_break_to
+        self.builder.position_at_start(quitBlock)
+        self.continueTo = lastContinueTo
+        self.breakTo = lastBreakTo
 
-        self.symbol_table = self.symbol_table.exitLevel()
+        self.mySymbolTable = self.mySymbolTable.exitLevel()
 
     def visitForCondition(self, ctx: CParser.ForConditionContext):
         '''
@@ -1148,9 +1148,9 @@ class myCVisitor(CVisitor):
             ;
         '''
         type = self.visit(ctx.declarationSpecifiers())
-        dec_list = self.visit(ctx.initDeclaratorList())
+        decList = self.visit(ctx.initDeclaratorList())
 
-        for name, init_val in dec_list:
+        for name, init_val in decList:
             self.variableDeclaration(name, init_val, type)
 
     def visitSelectionStatement(self, ctx: CParser.SelectionStatementContext):
@@ -1168,76 +1168,76 @@ class myCVisitor(CVisitor):
             ;
         '''
         if len(ctx.statement()) > 1:  # else or elif exist
-            self.symbol_table.addLevel()
+            self.mySymbolTable.addLevel()
 
-            block_name = self.builder.block.name
-            cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
-            stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
-            else_block = self.builder.append_basic_block(name='else'.format(block_name))
-            quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
+            blockName = self.builder.block.name
+            condBlock = self.builder.append_basic_block(name='cond'.format(blockName))
+            statBlock = self.builder.append_basic_block(name='stat'.format(blockName))
+            else_block = self.builder.append_basic_block(name='else'.format(blockName))
+            quitBlock = self.builder.append_basic_block(name='quit'.format(blockName))
 
             # condition block
-            self.builder.branch(cond_block)
-            self.builder.position_at_start(cond_block)
+            self.builder.branch(condBlock)
+            self.builder.position_at_start(condBlock)
             condition_value = self.visit(ctx.expression())
-            self.builder.cbranch(condition_value, stat_block, else_block)
+            self.builder.cbranch(condition_value, statBlock, else_block)
 
             # if block
-            self.builder.position_at_start(stat_block)
-            self.symbol_table.addLevel()
+            self.builder.position_at_start(statBlock)
+            self.mySymbolTable.addLevel()
             self.visit(ctx.statement()[0])
-            self.symbol_table.exitLevel()
+            self.mySymbolTable.exitLevel()
 
             # if quit block
             try:
-                self.builder.branch(quit_block)
+                self.builder.branch(quitBlock)
             except:
                 pass
-            self.builder.position_at_start(quit_block)
+            self.builder.position_at_start(quitBlock)
 
             # else block
             self.builder.position_at_start(else_block)
-            self.symbol_table.addLevel()
+            self.mySymbolTable.addLevel()
             self.visit(ctx.statement()[1])
-            self.symbol_table.exitLevel()
+            self.mySymbolTable.exitLevel()
 
             # else quit
             try:
-                self.builder.branch(quit_block)
+                self.builder.branch(quitBlock)
             except:
                 pass
-            self.builder.position_at_start(quit_block)
+            self.builder.position_at_start(quitBlock)
 
-            self.symbol_table.exitLevel()
+            self.mySymbolTable.exitLevel()
 
         else:  # no else
-            self.symbol_table.addLevel()
+            self.mySymbolTable.addLevel()
 
-            block_name = self.builder.block.name
-            cond_block = self.builder.append_basic_block(name='cond'.format(block_name))
-            stat_block = self.builder.append_basic_block(name='stat'.format(block_name))
-            quit_block = self.builder.append_basic_block(name='quit'.format(block_name))
+            blockName = self.builder.block.name
+            condBlock = self.builder.append_basic_block(name='cond'.format(blockName))
+            statBlock = self.builder.append_basic_block(name='stat'.format(blockName))
+            quitBlock = self.builder.append_basic_block(name='quit'.format(blockName))
 
             # condition block
-            self.builder.branch(cond_block)
-            self.builder.position_at_start(cond_block)
+            self.builder.branch(condBlock)
+            self.builder.position_at_start(condBlock)
             condition_value = self.visit(ctx.expression())
-            self.builder.cbranch(condition_value, stat_block, quit_block)
+            self.builder.cbranch(condition_value, statBlock, quitBlock)
 
             # statement block
-            self.builder.position_at_start(stat_block)
-            self.symbol_table.addLevel()
+            self.builder.position_at_start(statBlock)
+            self.mySymbolTable.addLevel()
             self.visit(ctx.statement()[0])
-            self.symbol_table.exitLevel()
+            self.mySymbolTable.exitLevel()
 
             # quit block
             try:
-                self.builder.branch(quit_block)
+                self.builder.branch(quitBlock)
             except:
                 pass
-            self.builder.position_at_start(quit_block)
+            self.builder.position_at_start(quitBlock)
 
-            self.symbol_table.exitLevel()
+            self.mySymbolTable.exitLevel()
 
     def print(self):
         return self.module.__str__()
