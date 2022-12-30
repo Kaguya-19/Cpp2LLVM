@@ -2,6 +2,8 @@
 int printf(const char *format, ...);
 int memset(unsigned int*s, int c, int n);
 int memcpy(unsigned int*dest,unsigned int *src, int n);
+void* malloc(int size);
+void free(void *ptr);
 
 void swap(unsigned int *a, int i, int j)
 {
@@ -65,7 +67,7 @@ void shellSort(unsigned int *a, int n) {
 
 void merge(unsigned int *a, int l, int m, int r) {
     int i = l, j = m + 1, k = 0;
-    unsigned int b[100];
+    unsigned int *b = malloc((r - l + 1) * 4);
     while (i <= m && j <= r) {
         if (a[i] < a[j])
             b[k++] = a[i++];
@@ -78,6 +80,7 @@ void merge(unsigned int *a, int l, int m, int r) {
         b[k++] = a[j++];
     for (i = l, k = 0; i <= r; i++, k++)
         a[i] = b[k];
+	free(b);
 }
 
 void mergeSort(unsigned int *a, int l, int r) {

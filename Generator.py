@@ -12,7 +12,6 @@ INT_TYPE = ir.IntType(32)
 FLOAT_TYPE = ir.FloatType()
 DOUBLE_TYPE = ir.DoubleType()
 VOID_TYPE = ir.VoidType()
-BOOL_TYPE = ir.IntType(1)
 
 
 # Type
@@ -103,6 +102,50 @@ class myCVisitor(CVisitor):
         self.continueTo = None
         self.breakTo = None
         self.myStructTable = StructTable()
+        
+    def castType(self,destType,value):
+        srcType = value.type
+        if destType == srcType:
+            return value
+        if srcType == INT_TYPE:
+            if destType == FLOAT_TYPE:
+                return self.builder.sitofp(value, destType)
+            elif destType == DOUBLE_TYPE:
+                return self.builder.sitofp(value, destType)
+            elif destType == CHAR_TYPE:
+                return self.builder.trunc(value, destType)
+            elif type(destType) == ir.PointerType:
+                return self.builder.inttoptr(value, destType)
+        elif srcType == FLOAT_TYPE:
+            if destType == INT_TYPE:
+                return self.builder.fptosi(value, destType)
+            elif destType == DOUBLE_TYPE:
+                return self.builder.fpext(value, destType)
+            elif destType == CHAR_TYPE:
+                return self.builder.trunc(self.builder.fptosi(value, INT_TYPE), destType)
+        elif srcType == DOUBLE_TYPE:
+            if destType == INT_TYPE:
+                return self.builder.fptosi(value, destType)
+            elif destType == FLOAT_TYPE:
+                return self.builder.fptrunc(value, destType)
+            elif destType == CHAR_TYPE:
+                return self.builder.trunc(self.builder.fptosi(value, INT_TYPE), destType)
+        elif srcType == CHAR_TYPE:
+            if destType == INT_TYPE:
+                return self.builder.sext(value, destType)
+            elif destType == FLOAT_TYPE:
+                return self.builder.sitofp(value, destType)
+            elif destType == DOUBLE_TYPE:
+                return self.builder.sitofp(value, destType)
+             #TODO: don't make sense
+        # if type(srcType) == ir.ArrayType:
+        #     if type(destType) == ir.PointerType:
+        #         return self.builder.gep(value, [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, 0)], inbounds=True)
+        # if type(srcType) == ir.PointerType:
+        #     if type(destType) == ir.ArrayType:
+        #         return self.builder.gep(value, [ir.Constant(INT_TYPE, 0), ir.Constant(INT_TYPE, 0)], inbounds=True)
+        
+        
     
     def visitPrimaryExpression(self, ctx: CParser.PrimaryExpressionContext):
         '''
@@ -244,6 +287,7 @@ class myCVisitor(CVisitor):
                 assignOptr = self.visit(ctx.children[1])
                 assignExpr = self.visit(ctx.children[2])
                 if assignOptr == '=':
+                    assignExpr = self.castType(origin.type, assignExpr)
                     return self.builder.store(assignExpr, unaryExpr)
                 elif assignOptr == '<<=':
                     edited = self.builder.shl(origin, assignExpr)
@@ -471,8 +515,12 @@ class myCVisitor(CVisitor):
         elif len(ctx.children) == 3:
             addExpr = self.visit(ctx.children[0])
             if ctx.children[1].getText() == '+':
+                if addExpr.type == FLOAT_TYPE or mulExpr.type == FLOAT_TYPE:
+                    return self.builder.fadd(addExpr, mulExpr)
                 return self.builder.add(addExpr, mulExpr)
             elif ctx.children[1].getText() == '-':
+                if addExpr.type == FLOAT_TYPE or mulExpr.type == FLOAT_TYPE:
+                    return self.builder.fsub(addExpr, mulExpr)
                 return self.builder.sub(addExpr, mulExpr)
 
 
@@ -491,8 +539,12 @@ class myCVisitor(CVisitor):
         elif len(ctx.children) == 3:
             mulExpr = self.visit(ctx.children[0])
             if ctx.children[1].getText() == '*':
+                # if mulExpr.type == FLOAT_TYPE or castExpr.type == FLOAT_TYPE:
+                #     return self.builder.fmul(mulExpr, castExpr)
                 return self.builder.mul(mulExpr, castExpr)
             elif ctx.children[1].getText() == '/':
+                # if mulExpr.type == FLOAT_TYPE or castExpr.type == FLOAT_TYPE:
+                #     return self.builder.fdiv(mulExpr, castExpr)
                 return self.builder.sdiv(mulExpr, castExpr)
             elif ctx.children[1].getText() == '%':
                 return self.builder.srem(mulExpr, castExpr)
@@ -594,7 +646,7 @@ class myCVisitor(CVisitor):
             self.builder.store(llvmFunc.args[i], addr)
             self.mySymbolTable.insert(paramName, paramType, addr)
         self.visit(ctx.compoundStatement())
-        if not self.builder.block.is_terminated:
+        if funcType == VOID_TYPE:
             self.builder.ret_void()
         self.mySymbolTable = self.mySymbolTable.exitLevel()
 
@@ -650,6 +702,17 @@ class myCVisitor(CVisitor):
             |   typeSpecifier pointer
             ;
         '''  
+
+        if ctx.pointer():
+            type = self.visit(ctx.typeSpecifier())
+            if type == VOID_TYPE:
+                type = INT_TYPE
+            return ir.PointerType(type)
+        elif ctx.structOrUnionSpecifier():
+            return self.visit(ctx.structOrUnionSpecifier())
+        elif ctx.typedefName():
+            return self.visit(ctx.typedefName())
+        
         if ctx.Void():
             return VOID_TYPE
         elif ctx.Char():
@@ -660,13 +723,6 @@ class myCVisitor(CVisitor):
             return FLOAT_TYPE
         elif ctx.Double():
             return DOUBLE_TYPE
-        if ctx.pointer():
-            type = self.visit(ctx.typeSpecifier())
-            return ir.PointerType(type)
-        elif ctx.structOrUnionSpecifier():
-            return self.visit(ctx.structOrUnionSpecifier())
-        elif ctx.typedefName():
-            return self.visit(ctx.typedefName())
 
 
     def visitStructOrUnionSpecifier(self, ctx: CParser.StructOrUnionSpecifierContext): 
@@ -804,9 +860,9 @@ class myCVisitor(CVisitor):
                 ptr_struct = self.myStructTable.getPtr(_type.name)
                 self.mySymbolTable.insert(name, type=(STRUCT_TYPE, None), value=self.builder.alloca(ptr_struct))
             else:
-                self.variableDeclaration(name, init_val, _type, ctx=ctx)
+                self.saveSymbol(name, init_val, _type, ctx=ctx)
 
-    def variableDeclaration(self, name, init_val, _type, ctx=None):
+    def saveSymbol(self, name, init_val, _type, ctx=None):
         '''
             declaration
             :   declarationSpecifiers initDeclaratorList ';'
@@ -1155,7 +1211,7 @@ class myCVisitor(CVisitor):
         decList = self.visit(ctx.initDeclaratorList())
 
         for name, init_val in decList:
-            self.variableDeclaration(name, init_val, type)
+            self.saveSymbol(name, init_val, type)
 
     def visitSelectionStatement(self, ctx: CParser.SelectionStatementContext):
         '''

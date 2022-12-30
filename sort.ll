@@ -8,6 +8,10 @@ declare i32 @"memset"(i32* %".1", i32 %".2", i32 %".3", ...)
 
 declare i32 @"memcpy"(i32* %".1", i32* %".2", i32 %".3", ...)
 
+declare i32* @"malloc"(i32 %".1", ...)
+
+declare void @"free"(i32* %".1", ...)
+
 define void @"swap"(i32* %".1", i32 %".2", i32 %".3")
 {
 swapentry:
@@ -397,175 +401,181 @@ mergeentry:
   store i32 %".12", i32* %"j"
   %"k" = alloca i32
   store i32 0, i32* %"k"
-  %"b" = alloca [100 x i32]
-  %".16" = bitcast [100 x i32]* %"b" to i32*
-  %".17" = alloca i32*
-  store i32* %".16", i32** %".17"
+  %".16" = load i32, i32* %"l"
+  %".17" = load i32, i32* %"r"
+  %".18" = sub i32 %".17", %".16"
+  %".19" = add i32 %".18", 1
+  %".20" = mul i32 %".19", 4
+  %".21" = call i32* (i32, ...) @"malloc"(i32 %".20")
+  %"b" = alloca i32*
+  store i32* %".21", i32** %"b"
   br label %"cond"
 cond:
-  %".20" = load i32, i32* %"r"
-  %".21" = load i32, i32* %"j"
-  %".22" = icmp sle i32 %".21", %".20"
-  %".23" = load i32, i32* %"m"
-  %".24" = load i32, i32* %"i"
-  %".25" = icmp sle i32 %".24", %".23"
-  %".26" = icmp ne i1 %".22", 0
-  %".27" = icmp ne i1 %".25", 0
-  %".28" = and i1 %".27", %".26"
-  br i1 %".28", label %"stat", label %"quit"
+  %".24" = load i32, i32* %"r"
+  %".25" = load i32, i32* %"j"
+  %".26" = icmp sle i32 %".25", %".24"
+  %".27" = load i32, i32* %"m"
+  %".28" = load i32, i32* %"i"
+  %".29" = icmp sle i32 %".28", %".27"
+  %".30" = icmp ne i1 %".26", 0
+  %".31" = icmp ne i1 %".29", 0
+  %".32" = and i1 %".31", %".30"
+  br i1 %".32", label %"stat", label %"quit"
 stat:
   br label %"cond.1"
 quit:
   br label %"cond.2"
 cond.1:
-  %".31" = load i32*, i32** %"a"
-  %".32" = load i32, i32* %".31"
-  %".33" = bitcast i32* %".31" to [0 x i32]*
-  %".34" = load i32, i32* %"j"
-  %".35" = getelementptr [0 x i32], [0 x i32]* %".33", i32 0, i32 %".34"
+  %".35" = load i32*, i32** %"a"
   %".36" = load i32, i32* %".35"
-  %".37" = load i32*, i32** %"a"
-  %".38" = load i32, i32* %".37"
-  %".39" = bitcast i32* %".37" to [0 x i32]*
-  %".40" = load i32, i32* %"i"
-  %".41" = getelementptr [0 x i32], [0 x i32]* %".39", i32 0, i32 %".40"
+  %".37" = bitcast i32* %".35" to [0 x i32]*
+  %".38" = load i32, i32* %"j"
+  %".39" = getelementptr [0 x i32], [0 x i32]* %".37", i32 0, i32 %".38"
+  %".40" = load i32, i32* %".39"
+  %".41" = load i32*, i32** %"a"
   %".42" = load i32, i32* %".41"
-  %".43" = icmp slt i32 %".42", %".36"
-  br i1 %".43", label %"stat.1", label %"else"
-stat.1:
-  %".45" = load i32*, i32** %".17"
+  %".43" = bitcast i32* %".41" to [0 x i32]*
+  %".44" = load i32, i32* %"i"
+  %".45" = getelementptr [0 x i32], [0 x i32]* %".43", i32 0, i32 %".44"
   %".46" = load i32, i32* %".45"
-  %".47" = bitcast i32* %".45" to [0 x i32]*
-  %".48" = load i32, i32* %"k"
-  store i32 %".48", i32* %"k"
-  %".50" = add i32 %".48", 1
-  store i32 %".50", i32* %"k"
-  %".52" = getelementptr [0 x i32], [0 x i32]* %".47", i32 0, i32 %".48"
-  %".53" = load i32, i32* %".52"
-  %".54" = load i32*, i32** %"a"
-  %".55" = load i32, i32* %".54"
-  %".56" = bitcast i32* %".54" to [0 x i32]*
-  %".57" = load i32, i32* %"i"
-  store i32 %".57", i32* %"i"
-  %".59" = add i32 %".57", 1
-  store i32 %".59", i32* %"i"
-  %".61" = getelementptr [0 x i32], [0 x i32]* %".56", i32 0, i32 %".57"
-  %".62" = load i32, i32* %".61"
-  store i32 %".62", i32* %".52"
+  %".47" = icmp slt i32 %".46", %".40"
+  br i1 %".47", label %"stat.1", label %"else"
+stat.1:
+  %".49" = load i32*, i32** %"b"
+  %".50" = load i32, i32* %".49"
+  %".51" = bitcast i32* %".49" to [0 x i32]*
+  %".52" = load i32, i32* %"k"
+  store i32 %".52", i32* %"k"
+  %".54" = add i32 %".52", 1
+  store i32 %".54", i32* %"k"
+  %".56" = getelementptr [0 x i32], [0 x i32]* %".51", i32 0, i32 %".52"
+  %".57" = load i32, i32* %".56"
+  %".58" = load i32*, i32** %"a"
+  %".59" = load i32, i32* %".58"
+  %".60" = bitcast i32* %".58" to [0 x i32]*
+  %".61" = load i32, i32* %"i"
+  store i32 %".61", i32* %"i"
+  %".63" = add i32 %".61", 1
+  store i32 %".63", i32* %"i"
+  %".65" = getelementptr [0 x i32], [0 x i32]* %".60", i32 0, i32 %".61"
+  %".66" = load i32, i32* %".65"
+  store i32 %".66", i32* %".56"
   br label %"quit.1"
 else:
-  %".65" = load i32*, i32** %".17"
-  %".66" = load i32, i32* %".65"
-  %".67" = bitcast i32* %".65" to [0 x i32]*
-  %".68" = load i32, i32* %"k"
-  store i32 %".68", i32* %"k"
-  %".70" = add i32 %".68", 1
-  store i32 %".70", i32* %"k"
-  %".72" = getelementptr [0 x i32], [0 x i32]* %".67", i32 0, i32 %".68"
-  %".73" = load i32, i32* %".72"
-  %".74" = load i32*, i32** %"a"
-  %".75" = load i32, i32* %".74"
-  %".76" = bitcast i32* %".74" to [0 x i32]*
-  %".77" = load i32, i32* %"j"
-  store i32 %".77", i32* %"j"
-  %".79" = add i32 %".77", 1
-  store i32 %".79", i32* %"j"
-  %".81" = getelementptr [0 x i32], [0 x i32]* %".76", i32 0, i32 %".77"
-  %".82" = load i32, i32* %".81"
-  store i32 %".82", i32* %".72"
+  %".69" = load i32*, i32** %"b"
+  %".70" = load i32, i32* %".69"
+  %".71" = bitcast i32* %".69" to [0 x i32]*
+  %".72" = load i32, i32* %"k"
+  store i32 %".72", i32* %"k"
+  %".74" = add i32 %".72", 1
+  store i32 %".74", i32* %"k"
+  %".76" = getelementptr [0 x i32], [0 x i32]* %".71", i32 0, i32 %".72"
+  %".77" = load i32, i32* %".76"
+  %".78" = load i32*, i32** %"a"
+  %".79" = load i32, i32* %".78"
+  %".80" = bitcast i32* %".78" to [0 x i32]*
+  %".81" = load i32, i32* %"j"
+  store i32 %".81", i32* %"j"
+  %".83" = add i32 %".81", 1
+  store i32 %".83", i32* %"j"
+  %".85" = getelementptr [0 x i32], [0 x i32]* %".80", i32 0, i32 %".81"
+  %".86" = load i32, i32* %".85"
+  store i32 %".86", i32* %".76"
   br label %"quit.1"
 quit.1:
   br label %"cond"
 cond.2:
-  %".87" = load i32, i32* %"m"
-  %".88" = load i32, i32* %"i"
-  %".89" = icmp sle i32 %".88", %".87"
-  br i1 %".89", label %"stat.2", label %"quit.2"
+  %".91" = load i32, i32* %"m"
+  %".92" = load i32, i32* %"i"
+  %".93" = icmp sle i32 %".92", %".91"
+  br i1 %".93", label %"stat.2", label %"quit.2"
 stat.2:
-  %".91" = load i32*, i32** %".17"
-  %".92" = load i32, i32* %".91"
-  %".93" = bitcast i32* %".91" to [0 x i32]*
-  %".94" = load i32, i32* %"k"
-  store i32 %".94", i32* %"k"
-  %".96" = add i32 %".94", 1
-  store i32 %".96", i32* %"k"
-  %".98" = getelementptr [0 x i32], [0 x i32]* %".93", i32 0, i32 %".94"
-  %".99" = load i32, i32* %".98"
-  %".100" = load i32*, i32** %"a"
-  %".101" = load i32, i32* %".100"
-  %".102" = bitcast i32* %".100" to [0 x i32]*
-  %".103" = load i32, i32* %"i"
-  store i32 %".103", i32* %"i"
-  %".105" = add i32 %".103", 1
-  store i32 %".105", i32* %"i"
-  %".107" = getelementptr [0 x i32], [0 x i32]* %".102", i32 0, i32 %".103"
-  %".108" = load i32, i32* %".107"
-  store i32 %".108", i32* %".98"
+  %".95" = load i32*, i32** %"b"
+  %".96" = load i32, i32* %".95"
+  %".97" = bitcast i32* %".95" to [0 x i32]*
+  %".98" = load i32, i32* %"k"
+  store i32 %".98", i32* %"k"
+  %".100" = add i32 %".98", 1
+  store i32 %".100", i32* %"k"
+  %".102" = getelementptr [0 x i32], [0 x i32]* %".97", i32 0, i32 %".98"
+  %".103" = load i32, i32* %".102"
+  %".104" = load i32*, i32** %"a"
+  %".105" = load i32, i32* %".104"
+  %".106" = bitcast i32* %".104" to [0 x i32]*
+  %".107" = load i32, i32* %"i"
+  store i32 %".107", i32* %"i"
+  %".109" = add i32 %".107", 1
+  store i32 %".109", i32* %"i"
+  %".111" = getelementptr [0 x i32], [0 x i32]* %".106", i32 0, i32 %".107"
+  %".112" = load i32, i32* %".111"
+  store i32 %".112", i32* %".102"
   br label %"cond.2"
 quit.2:
   br label %"cond.3"
 cond.3:
-  %".112" = load i32, i32* %"r"
-  %".113" = load i32, i32* %"j"
-  %".114" = icmp sle i32 %".113", %".112"
-  br i1 %".114", label %"stat.3", label %"quit.3"
+  %".116" = load i32, i32* %"r"
+  %".117" = load i32, i32* %"j"
+  %".118" = icmp sle i32 %".117", %".116"
+  br i1 %".118", label %"stat.3", label %"quit.3"
 stat.3:
-  %".116" = load i32*, i32** %".17"
-  %".117" = load i32, i32* %".116"
-  %".118" = bitcast i32* %".116" to [0 x i32]*
-  %".119" = load i32, i32* %"k"
-  store i32 %".119", i32* %"k"
-  %".121" = add i32 %".119", 1
-  store i32 %".121", i32* %"k"
-  %".123" = getelementptr [0 x i32], [0 x i32]* %".118", i32 0, i32 %".119"
-  %".124" = load i32, i32* %".123"
-  %".125" = load i32*, i32** %"a"
-  %".126" = load i32, i32* %".125"
-  %".127" = bitcast i32* %".125" to [0 x i32]*
-  %".128" = load i32, i32* %"j"
-  store i32 %".128", i32* %"j"
-  %".130" = add i32 %".128", 1
-  store i32 %".130", i32* %"j"
-  %".132" = getelementptr [0 x i32], [0 x i32]* %".127", i32 0, i32 %".128"
-  %".133" = load i32, i32* %".132"
-  store i32 %".133", i32* %".123"
+  %".120" = load i32*, i32** %"b"
+  %".121" = load i32, i32* %".120"
+  %".122" = bitcast i32* %".120" to [0 x i32]*
+  %".123" = load i32, i32* %"k"
+  store i32 %".123", i32* %"k"
+  %".125" = add i32 %".123", 1
+  store i32 %".125", i32* %"k"
+  %".127" = getelementptr [0 x i32], [0 x i32]* %".122", i32 0, i32 %".123"
+  %".128" = load i32, i32* %".127"
+  %".129" = load i32*, i32** %"a"
+  %".130" = load i32, i32* %".129"
+  %".131" = bitcast i32* %".129" to [0 x i32]*
+  %".132" = load i32, i32* %"j"
+  store i32 %".132", i32* %"j"
+  %".134" = add i32 %".132", 1
+  store i32 %".134", i32* %"j"
+  %".136" = getelementptr [0 x i32], [0 x i32]* %".131", i32 0, i32 %".132"
+  %".137" = load i32, i32* %".136"
+  store i32 %".137", i32* %".127"
   br label %"cond.3"
 quit.3:
-  %".136" = load i32, i32* %"i"
-  %".137" = load i32, i32* %"l"
-  store i32 %".137", i32* %"i"
-  %".139" = load i32, i32* %"k"
+  %".140" = load i32, i32* %"i"
+  %".141" = load i32, i32* %"l"
+  store i32 %".141", i32* %"i"
+  %".143" = load i32, i32* %"k"
   store i32 0, i32* %"k"
   br label %"cond.4"
 cond.4:
-  %".142" = load i32, i32* %"r"
-  %".143" = load i32, i32* %"i"
-  %".144" = icmp sle i32 %".143", %".142"
-  br i1 %".144", label %"stat.4", label %"quit.4"
+  %".146" = load i32, i32* %"r"
+  %".147" = load i32, i32* %"i"
+  %".148" = icmp sle i32 %".147", %".146"
+  br i1 %".148", label %"stat.4", label %"quit.4"
 stat.4:
-  %".146" = load i32*, i32** %"a"
-  %".147" = load i32, i32* %".146"
-  %".148" = bitcast i32* %".146" to [0 x i32]*
-  %".149" = load i32, i32* %"i"
-  %".150" = getelementptr [0 x i32], [0 x i32]* %".148", i32 0, i32 %".149"
+  %".150" = load i32*, i32** %"a"
   %".151" = load i32, i32* %".150"
-  %".152" = load i32*, i32** %".17"
-  %".153" = load i32, i32* %".152"
-  %".154" = bitcast i32* %".152" to [0 x i32]*
-  %".155" = load i32, i32* %"k"
-  %".156" = getelementptr [0 x i32], [0 x i32]* %".154", i32 0, i32 %".155"
+  %".152" = bitcast i32* %".150" to [0 x i32]*
+  %".153" = load i32, i32* %"i"
+  %".154" = getelementptr [0 x i32], [0 x i32]* %".152", i32 0, i32 %".153"
+  %".155" = load i32, i32* %".154"
+  %".156" = load i32*, i32** %"b"
   %".157" = load i32, i32* %".156"
-  store i32 %".157", i32* %".150"
-  %".159" = load i32, i32* %"i"
-  store i32 %".159", i32* %"i"
-  %".161" = add i32 %".159", 1
-  store i32 %".161", i32* %"i"
-  %".163" = load i32, i32* %"k"
-  store i32 %".163", i32* %"k"
+  %".158" = bitcast i32* %".156" to [0 x i32]*
+  %".159" = load i32, i32* %"k"
+  %".160" = getelementptr [0 x i32], [0 x i32]* %".158", i32 0, i32 %".159"
+  %".161" = load i32, i32* %".160"
+  store i32 %".161", i32* %".154"
+  %".163" = load i32, i32* %"i"
+  store i32 %".163", i32* %"i"
   %".165" = add i32 %".163", 1
-  store i32 %".165", i32* %"k"
+  store i32 %".165", i32* %"i"
+  %".167" = load i32, i32* %"k"
+  store i32 %".167", i32* %"k"
+  %".169" = add i32 %".167", 1
+  store i32 %".169", i32* %"k"
   br label %"cond.4"
 quit.4:
+  %".172" = load i32*, i32** %"b"
+  call void (i32*, ...) @"free"(i32* %".172")
   ret void
 }
 
