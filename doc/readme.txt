@@ -1,7 +1,4 @@
-运行lex.py实现词法分析。
-
-指令示例： python lex.py < ./test/calculator.cpp。
-
-Token分为四个部分：类型、值、起始位置、结束位置。
-如下是一个Token的示例，其中类型是Float，值是float，起始位置是第1171，结束位置是第1171。
-<Float, float, 1171, 1176>
+需要安装llvmlite库与Antlr4库,Antlr版本为4.7.2。教程见https://zhuanlan.zhihu.com/p/423928097。
+指令示例：
+python Generate.py ./test/calculator.c  ./calculator.ll
+第一个参数为输入文件，第二个参数为输出文件。
